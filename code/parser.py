@@ -7,6 +7,12 @@ from router import Router
 AS_LIST_NAME = "Les_AS"
 ROUTER_LIST_NAME = "Les_routers"
 
+def router_list_into_hostname_dictionary(router_list:list[Router]) -> dict[str, Router]:
+    dico = {}
+    for router in router_list:
+        dico[router.hostname] = router
+    return dico
+
 def parse_intent_file(file_path:str) -> tuple[list[AS], list[Router]]:
     """
     Fonction de parsing d'un fichier d'intention dans notre format
