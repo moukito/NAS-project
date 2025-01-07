@@ -5,6 +5,7 @@ class AS:
         self.routers = routers
         self.routage_interne = routage_interne
         self.AS_connectes = AS_connectes
+        self.hashset_routers = set(routers)
 
     def print_as_number(self):
         """

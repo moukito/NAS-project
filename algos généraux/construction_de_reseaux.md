@@ -14,7 +14,7 @@
         - est-ce que ce lien a déjà un préfixe IP généré ?
             - si non, générer un nouveau préfixe IP de sous-réseau de transport à partir du préfixe IP de l'AS et des préfixes IP de sous-réseau déjà générés (pour un réseau d'interconnection, faut rajouter cette information dans les infos des AS concernés)
         - générer une IP pour l'interface du routeur sur ce lien
-        - choisir quel interface va être sur ce lien (popper le dernier élément de la liste des lien inutilisés fonctionne)
+        - choisir quel interface va être sur ce lien (popper le premier élément de la liste des lien inutilisés fonctionne)
         - initialiser un string de configuration supplémentaire d'abord vide
         - Si le protocole de routage interne est OSPF
             - changer le string de configuration supplémentaire à "ipv6 ospf {process_id OSPF} area 0"

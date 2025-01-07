@@ -3,4 +3,6 @@ class Router:
         self.hostname = hostname
         self.liens = liens
         self.AS_number = AS_number
+        self.passive_interfaces = {}
+        self.router_id = None
         
