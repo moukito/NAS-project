@@ -8,6 +8,14 @@ AS_LIST_NAME = "Les_AS"
 ROUTER_LIST_NAME = "Les_routers"
 
 def parse_intent_file(file_path:str) -> tuple[list[AS], list[Router]]:
+    """
+    Fonction de parsing d'un fichier d'intention dans notre format
+
+    entrée: file_path, un chemin relatif ou absolu valide dans le système de fichier
+    sortie: tuple contenant la liste des AS, et la liste des routeurs dans le fichier donné
+
+    Si le chemin ne mène pas à un fichier valide, la fonction va renvoyer une exception
+    """
     with open(file_path, "r") as file:
         data = json.load(file)
         les_as = []
@@ -17,5 +25,11 @@ def parse_intent_file(file_path:str) -> tuple[list[AS], list[Router]]:
             routers = autonomous["routers"]
             routage_interne = autonomous["routage_interne"],
             connected_as = autonomous["AS_connectes"]
-            les_as.append(AS())
-    return ("", "")
+            les_as.append(AS(ip, as_number, routers, routage_interne, connected_as))
+        les_routers = []
+        for router in data[ROUTER_LIST_NAME]:
+            hostname = router["hostname"]
+            links = router["links"]
+            as_number = router["AS_number"]
+            les_routers.append(Router(hostname, links, as_number))
+        return (les_as, les_routers)
