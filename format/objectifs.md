@@ -4,7 +4,7 @@ Tout en JSON
 
 pas complet, rajoutez ce qu'il faut
 
-## Les AS
+## Liste d'AS
 
 Chaque AS a :
 - un numéro d'AS
@@ -13,7 +13,7 @@ Chaque AS a :
 - nom du protocole de routage interne (ou identifiant unique pour celui-ci)
 - une liste des AS connus avec qui on veut parler qui nous dit si ils sont peer, fournisseurs ou clients
 
-## Les routeurs
+## Liste de tous les routeurs
 
 Chaque routeur a :
 - son hostname
