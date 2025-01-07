@@ -5,3 +5,12 @@ class AS:
         self.routers = routers
         self.routage_interne = routage_interne
         self.AS_connenctes = AS_connenctes
+
+    def print_as_number(self):
+        """
+        Cette fonction sert à print l'AS number
+
+        entrées: rien
+        sorties: output dans la console
+        """
+        print(self.as_number)
