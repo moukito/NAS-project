@@ -11,7 +11,7 @@ Chaque AS a :
 - un préfixe IPV6
 - une liste de routeurs (chaque hostname doit être unique et ne peut pas être dans 2 AS)
 - nom du protocole de routage interne (ou identifiant unique pour celui-ci)
-- une liste des AS connus avec qui on veut parler qui nous dit si ils sont peer, fournisseurs ou clients
+- une liste des AS connus avec qui on veut parler qui nous dit si ils sont peer, fournisseurs ou clients, ET les réseaux d'interconnection à utiliser 
 
 ## Liste de tous les routeurs
 

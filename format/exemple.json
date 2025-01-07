@@ -5,14 +5,14 @@
             "AS_number":111,
             "routers":["R1", "R2"],
             "routage_interne":"OSPF",
-            "AS_connectes":[(110, "peer")]
+            "AS_connectes":[(110, "peer", ["2001:200:601::/64", "2001:200:602::/64"])]
         },
         {
             "ipv6_prefix":"2001:200:700::/64",
             "AS_number":110,
             "routers":["R4", "R3"],
             "routage_interne":"RIP",
-            "AS_connectes":[(111, "peer")]
+            "AS_connectes":[(111, "peer", ["2001:200:601::/64", "2001:200:602::/64"])]
         }
     ],
     "Les_routeurs":[
