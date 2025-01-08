@@ -26,9 +26,36 @@ class SubNetwork:
         list_copy = [self.list_ip[i] for i in range(len(self.list_ip))]
         list_copy[-1] = router_id
         return list_of_ints_into_ipv6_address(list_copy)
+    def next_subnetwork_with_n_routers(self, routers:int):
+        """
+        Returns a new subnetwork with an address inside the network this is executed on
+
+        input : self (method) and a positive integer representing the expected number of routers in that new sub-network
+        output : new SubNetwork object with the right address
+        """
+        self.assigned_sub_networks += 1
+        list_copy = [self.list_ip[i] for i in range(len(self.list_ip))]
+        list_copy[self.start_of_free_spots] = self.assigned_sub_networks
+        return SubNetwork(list_of_ints_and_mask_to_ipv6_network(list_copy, self.start_of_free_spots + 1), routers)
+
+def list_of_ints_and_mask_to_ipv6_network(ints:list[int], mask:int) -> IPv6Network:
+    """
+    transforme une liste de 8 entiers positifs représentables sur 16 bits et un masque de 1 à 8 en une addresse
+
+    entrée : liste de 8 entiers en question et un masque réseau qui représente le vrai masque divisé par 16
+    sortie : addresse de réseau IPv6
+    """
+    actual_mask = str(mask * 16)
+    new_string = ""
+    for i in range(len(ints) - 1):
+        new_string += f"{hex(ints[i]).split("x")[1]}:"
+    new_string += f"{hex(ints[-1]).split("x")[1]}/{actual_mask}"
+    return IPv6Network(new_string)
+
+
 def list_of_ints_into_ipv6_address(ints:list[int]) -> IPv6Address:
     """
-    transforme une liste de 8 entiers positifs représentables sur 16 bits
+    transforme une liste de 8 entiers positifs représentables sur 16 bits en une addresse IPv6 unicast
 
     entrée : liste de 8 entiers en question
     sortie : address IPv6 unicast
