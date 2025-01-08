@@ -35,8 +35,8 @@ def list_of_ints_into_ipv6_address(ints:list[int]) -> IPv6Address:
     """
     final_string = ""
     for i in range(len(ints) - 1):
-        final_string += f"{ints[i]}:"
-    final_string += ints[-1]
+        final_string += f"{hex(ints[i]).split("x")[1]}:"
+    final_string += f"{hex(ints[-1]).split("x")[1]}"
     return IPv6Address(final_string)
 
 def str_network_into_list(network_address:IPv6Network) -> tuple[list[int], int]:
@@ -61,10 +61,10 @@ def str_network_into_list(network_address:IPv6Network) -> tuple[list[int], int]:
                 past_2_semicol = True
             else:
                 if not past_2_semicol:
-                    numbers[current_slot] = int(studied_number)
+                    numbers[current_slot] = int(studied_number, 16)
                     current_slot += 1
                 else:
-                    numbers_past_2_semicol.append(int(studied_number))
+                    numbers_past_2_semicol.append(int(studied_number, 16))
                 studied_number = ""
                 already_one_semicolon = True
         else:
@@ -72,9 +72,9 @@ def str_network_into_list(network_address:IPv6Network) -> tuple[list[int], int]:
             studied_number += cara
     if studied_number != "":
         if past_2_semicol:
-            numbers_past_2_semicol.append(int(studied_number))
+            numbers_past_2_semicol.append(int(studied_number, 16))
         else:
-            numbers[current_slot] = int(studied_number)
+            numbers[current_slot] = int(studied_number, 16)
     for i in range(len(numbers_past_2_semicol)):
         numbers[-(i + len(numbers_past_2_semicol))] = numbers_past_2_semicol[i]
     return (numbers, free_slots_start)
