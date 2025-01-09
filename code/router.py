@@ -39,3 +39,8 @@ class Router:
             if my_as.internal_routing == "OSPF":
                 extra_config = f"ipv6 ospf {NOM_PROCESSUS_OSPF_PAR_DEFAUT} area 0"
             self.config_str_per_link[link] = f"interface {interface}\n no ip address\n negotiation auto\n ipv6 address {str(ip_address)}\n ipv6 enable\n {extra_config}"
+
+"""
+proposition pour router_id:
+peut-être on peut mettre le paramètre router_id dans autonomous_system ?
+"""
