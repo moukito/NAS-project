@@ -31,9 +31,9 @@ def parse_intent_file(file_path:str) -> tuple[list[AS], list[Router]]:
             as_number = autonomous["AS_number"]
             routers = autonomous["routers"]
             ip = SubNetwork(ipaddress.IPv6Network(autonomous["ipv6_prefix"]), len(routers))
-            routage_interne = autonomous["routage_interne"],
-            connected_as = autonomous["AS_connectes"]
-            les_as.append(AS(ip, as_number, routers, routage_interne, connected_as))
+            internal_routing = autonomous["internal_routing"],
+            connected_as = autonomous["connected_AS"]
+            les_as.append(AS(ip, as_number, routers, internal_routing, connected_as))
         les_routers = []
         for router in data[ROUTER_LIST_NAME]:
             hostname = router["hostname"]
