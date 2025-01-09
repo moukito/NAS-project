@@ -3,6 +3,7 @@ import ipaddress
 
 from autonomous_system import AS
 from router import Router
+from ipv6 import SubNetwork
 
 AS_LIST_NAME = "Les_AS"
 ROUTER_LIST_NAME = "Les_routers"
@@ -26,9 +27,10 @@ def parse_intent_file(file_path:str) -> tuple[list[AS], list[Router]]:
         data = json.load(file)
         les_as = []
         for autonomous in data[AS_LIST_NAME]:
-            ip = ipaddress.IPv6Network(autonomous["ipv6_prefix"])
+            
             as_number = autonomous["AS_number"]
             routers = autonomous["routers"]
+            ip = SubNetwork(ipaddress.IPv6Network(autonomous["ipv6_prefix"]), len(routers))
             routage_interne = autonomous["routage_interne"],
             connected_as = autonomous["AS_connectes"]
             les_as.append(AS(ip, as_number, routers, routage_interne, connected_as))
