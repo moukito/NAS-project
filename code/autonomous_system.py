@@ -25,16 +25,37 @@ class AS:
     def get_routers(self):
         return self.routers
     
-    def set_a_router(self, new_router: Router):
-        self.routers.append(new_router)
+    def add_router(self, new_router: Router):
+        if newrouter not in routers:
+            self.routers.append(new_router)
 
-    def remove_a_router(self, router_to_remove: Router):
-        self.routers.remove(router_to_remove)
+    def remove_router(self, router_to_remove: Router):
+        try:
+            self.routers.remove(router_to_remove)
+        except ValueError:
+            raise ValueError("Router to remove is not in router liste !")
+
 
     def get_internal_routing(self):
         return self.internal_routing
+    
+    def set_internal_routing(self, new_internal_routing: str):
+        if new_internal_routing not in ("RIP", "OSPF"):
+            raise ValueError("Unsupported internal routing protocol !")
+        self.internal_routing = new_internal_routing
 
     def get_connected_AS(self):
         return self.connected_AS
+
+    def add_connected_AS(self, new_connected_AS: int):
+        if new_connected_AS not in self.connected_AS:
+            self.connected_AS.append(new_connected_AS)
+    
+    def remove_connected_AS(self, AS_to_remove: int):
+        try:
+            self.connected_AS.remove(AS_to_remove)
+        except ValueError:
+            raise ValueError("AS to remove is not connected with treated AS !")
+
     
 
