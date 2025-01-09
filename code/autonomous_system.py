@@ -35,7 +35,6 @@ class AS:
         except ValueError:
             raise ValueError("Router to remove is not in router liste !")
 
-
     def get_internal_routing(self):
         return self.internal_routing
     
