@@ -2,7 +2,7 @@ from ipaddress import IPv6Address, IPv6Network
 from router import Router
 
 class AS:
-    def __init__(self, ipv6_prefix: IPv6Network, AS_number: int, routers: list[Router], internal_routing: str, connected_AS: list[int]):
+    def __init__(self, ipv6_prefix: IPv6Network, AS_number: int, routers: list[Router], internal_routing: str, connected_AS: list[(int, str, list[IPv6Network]]):
         self.ipv6_prefix = IPv6Network(ipv6_prefix, strict = False)
         self.AS_number = AS_number
         self.routers = routers
@@ -52,7 +52,7 @@ class AS:
     
     def remove_connected_AS(self, AS_to_remove: int):
         try:
-            self.connected_AS.remove(AS_to_remove)
+            self.connected_AS.remove((AS_to_remove, _, _))
         except ValueError:
             raise ValueError("AS to remove is not connected with treated AS !")
 
