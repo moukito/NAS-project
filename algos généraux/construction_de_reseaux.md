@@ -45,7 +45,7 @@ remarque : en iBGP, on est en "full mesh", tous les routeurs internes d'un AS do
     - pour chaque lien de ce router
         - si le lien est vers un router dans un autre AS que celui en cours de calcul
             - rajouter ce lien dans les voisins eBGP avec le remote AS correspondant
-            - marquer ce lien comme 
+            - marquer ce lien comme passive interface
     - rajouter les listes des voisins iBGP et eBGP dans le dictionnaire par router à l'hostname correspondant
     - la configuration correspondante est :
     "

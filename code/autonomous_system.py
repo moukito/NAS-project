@@ -1,9 +1,10 @@
 from ipaddress import IPv6Address, IPv6Network
+from ipv6 import SubNetwork
 from router import Router
 
 class AS:
-    def __init__(self, ipv6_prefix: IPv6Network, AS_number: int, routers: list[Router], internal_routing: str, connected_AS: list[(int, str, list[IPv6Network]]):
-        self.ipv6_prefix = IPv6Network(ipv6_prefix, strict = False)
+    def __init__(self, ipv6_prefix: SubNetwork, AS_number: int, routers: list[Router], internal_routing: str, connected_AS: list[tuple[int, str, list[IPv6Network]]]):
+        self.ipv6_prefix = ipv6_prefix
         self.AS_number = AS_number
         self.routers = routers
         self.internal_routing = internal_routing
@@ -13,8 +14,8 @@ class AS:
     def get_ipv6_prefix(self):
         return self.ipv6_prefix
 
-    def set_ipv6_prefix(self, new_ipv6_prefix: IPv6Network):
-        self.ipv6_prefix = IPv6Network(new_ipv6_prefix, strict = False)
+    def set_ipv6_prefix(self, new_ipv6_prefix: SubNetwork):
+        self.ipv6_prefix = new_ipv6_prefix
     
     def get_AS_number(self):
         return self.AS_number
@@ -26,7 +27,7 @@ class AS:
         return self.routers
     
     def add_router(self, new_router: Router):
-        if newrouter not in routers:
+        if new_router not in self.routers:
             self.routers.append(new_router)
 
     def remove_router(self, router_to_remove: Router):
