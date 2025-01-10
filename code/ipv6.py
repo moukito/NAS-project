@@ -72,7 +72,7 @@ def list_of_ints_into_ipv6_address(ints:list[int]) -> IPv6Address:
 def str_network_into_list(network_address:IPv6Network) -> tuple[list[int], int]:
     """
     transforme une adresse de réseau IPv6 en une liste d'entiers 16 bits et l'index du premier entier après le masque
-
+    2001:5:3:0:9:3::/96
     entrée : adresse de réseau IPv6
     sortie : tuple(liste de 8 entiers 16 bits, index du premier entier dans la liste pouvant être changé après le masque)
     """
