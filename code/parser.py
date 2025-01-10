@@ -58,7 +58,7 @@ routeur_dico = router_list_into_hostname_dictionary(les_routeurs)
 
 for routeur in les_routeurs:
     routeur.set_interface_configuration_data(as_dico, routeur_dico)
-    print(routeur)
+    print(routeur.config_str_per_link)
 
 for routeur in les_routeurs:
     routeur.set_bgp_config_data(as_dico, routeur_dico)

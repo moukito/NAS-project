@@ -48,6 +48,8 @@ class Router:
             extra_config = ""
             if my_as.internal_routing == "OSPF":
                 extra_config = f"ipv6 ospf {NOM_PROCESSUS_OSPF_PAR_DEFAUT} area 0"
+            elif my_as.internal_routing == "RIP":
+                extra_config = f"ipv6 rip {NOM_PROCESSUS_OSPF_PAR_DEFAUT} enable"
             self.config_str_per_link[link] = f"interface {interface}\n no ip address\n negotiation auto\n ipv6 address {str(ip_address)}\n ipv6 enable\n {extra_config}"
         # print(f"LEN DE FOU : {self.ip_per_link}")
     def set_bgp_config_data(self, autonomous_systems:dict[int, AS], all_routers:dict[str, "Router"]):
@@ -59,6 +61,7 @@ class Router:
         """
         my_as = autonomous_systems[self.AS_number]
         router_id = my_as.ipv6_prefix.get_ip_address_with_router_id(my_as.ipv6_prefix.get_next_router_id())
+        self.router_id = router_id
         self.voisins_ibgp = my_as.hashset_routers.difference(set([self.hostname]))
         for link in self.links:
             if all_routers[link].AS_number != self.AS_number:
@@ -73,7 +76,16 @@ class Router:
         for voisin_ebgp in self.voisins_ebgp:
             remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
             config_neighbors_ebgp += f"neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n"
+            relation = my_as.connected_AS_dict[all_routers[voisin_ebgp].AS_number][0]
+            
             config_address_family += f"neighbor {remote_ip} activate\n"
+            if relation == "peer":
+                config_address_family += f"neighbor {remote_ip} route-map tag_pref_peer in\n"
+            elif relation == "provider":
+                config_address_family += f"neighbor {remote_ip} route-map tag_pref_provider in\n"
+            else:
+                config_address_family += f"neighbor {remote_ip} route-map tag_pref_customer in\n"
+
         self.config_bgp = f"""
 router bgp {self.AS_number}
  bgp router-id {router_id}
