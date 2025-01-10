@@ -1,4 +1,5 @@
 from autonomous_system import AS
+from ipv6 import SubNetwork
 from writer import LINKS_STANDARD, NOM_PROCESSUS_OSPF_PAR_DEFAUT
 
 class Router:
@@ -16,6 +17,9 @@ class Router:
         self.voisins_ibgp = set()
         self.config_bgp = ""
     
+    def __str__(self):
+        return f"hostname:{self.hostname}\n liens:{self.links}\n as_number:{self.AS_number}"
+
     def set_interface_configuration_data(self, autonomous_systems:dict[int, AS], all_routers:dict[str, "Router"]):
         """
         Génère les string de configuration par lien pour le routeur self
@@ -26,16 +30,19 @@ class Router:
         my_as = autonomous_systems[self.AS_number]
         interfaces = [LINKS_STANDARD[i] for i in range(len(LINKS_STANDARD))]
         for link in self.links:
+            interface_for_link = interfaces.pop(0)
             if not self.subnetworks_per_link.get(link, False):
                 if link in my_as.hashset_routers:
                     self.subnetworks_per_link[link] = my_as.ipv6_prefix.next_subnetwork_with_n_routers(2)
-                    all_routers[link].subnetworks_per_link = self.subnetworks_per_link[link]
+                    all_routers[link].subnetworks_per_link[self.hostname] = self.subnetworks_per_link[link]
                 else:
-                    self.passive_interfaces.add(link)
-                    print("PAS ENCORE IMPLEMENTE")
+                    self.passive_interfaces.add(interface_for_link)
+                    picked_transport_interface = SubNetwork(my_as.connected_AS_dict[all_routers[link].AS_number][1].pop(0), 2)
+                    self.subnetworks_per_link[link] = picked_transport_interface
+                    all_routers[link].subnetworks_per_link[self.hostname] = picked_transport_interface
             elif link not in my_as.hashset_routers:
                 self.passive_interfaces.add(link)
-            ip_address, interface = self.subnetworks_per_link[link].get_ip_address_with_router_id(self.subnetworks_per_link[link].get_next_router_id()),interfaces.pop(0)
+            ip_address, interface = self.subnetworks_per_link[link].get_ip_address_with_router_id(self.subnetworks_per_link[link].get_next_router_id()), interface_for_link
             self.ip_per_link[link] = ip_address
             self.interface_per_link[link] = self.interface_per_link.get(link,interface)
             extra_config = ""
@@ -49,7 +56,6 @@ class Router:
 
         entrées : self (méthode), dictionnaire numéro_d'AS:AS, dictionnaire nom_des_routeurs:Router
         sorties : changement de plusieurs attributs de l'objet, mais surtout de config_bgp qui contient le string de configuration à la fin de l'exécution de la fonction
-        
         """
         my_as = autonomous_systems[self.AS_number]
         router_id = my_as.ipv6_prefix.get_ip_address_with_router_id(my_as.ipv6_prefix.get_next_router_id())

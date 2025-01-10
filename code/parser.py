@@ -1,17 +1,24 @@
 import json
 import ipaddress
+import os
 
 from autonomous_system import AS
 from router import Router
 from ipv6 import SubNetwork
 
 AS_LIST_NAME = "Les_AS"
-ROUTER_LIST_NAME = "Les_routers"
+ROUTER_LIST_NAME = "Les_routeurs"
 
 def router_list_into_hostname_dictionary(router_list:list[Router]) -> dict[str, Router]:
     dico = {}
     for router in router_list:
         dico[router.hostname] = router
+    return dico
+
+def as_list_into_as_number_dictionary(as_list:list[AS]) -> dict[int, AS]:
+    dico = {}
+    for autonomous in as_list:
+        dico[autonomous.AS_number] = autonomous
     return dico
 
 def parse_intent_file(file_path:str) -> tuple[list[AS], list[Router]]:
@@ -31,7 +38,7 @@ def parse_intent_file(file_path:str) -> tuple[list[AS], list[Router]]:
             as_number = autonomous["AS_number"]
             routers = autonomous["routers"]
             ip = SubNetwork(ipaddress.IPv6Network(autonomous["ipv6_prefix"]), len(routers))
-            internal_routing = autonomous["internal_routing"],
+            internal_routing = autonomous["internal_routing"]
             connected_as = autonomous["connected_AS"]
             les_as.append(AS(ip, as_number, routers, internal_routing, connected_as))
         les_routers = []
@@ -41,3 +48,16 @@ def parse_intent_file(file_path:str) -> tuple[list[AS], list[Router]]:
             as_number = router["AS_number"]
             les_routers.append(Router(hostname, links, as_number))
         return (les_as, les_routers)
+
+(les_as, les_routeurs) = parse_intent_file("format/exemple.json")
+for autonomous in les_as:
+    print(autonomous)
+
+as_dico = as_list_into_as_number_dictionary(les_as)
+routeur_dico = router_list_into_hostname_dictionary(les_routeurs)
+
+for routeur in les_routeurs:
+    routeur.set_interface_configuration_data(as_dico, routeur_dico)
+    routeur.set_bgp_config_data(as_dico, routeur_dico)
+    print(routeur)
+

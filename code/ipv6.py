@@ -7,6 +7,9 @@ class SubNetwork:
         self.assigned_router_ids = last_router_id
         self.assigned_sub_networks = 0
         self.list_ip, self.start_of_free_spots = str_network_into_list(network_address)
+    def __str__(self):
+        return self.network_address.__str__()
+
     def get_next_router_id(self) -> int:
         """
         Renvoie le prochain router id unique à assigner sur ce sous-réseau
