@@ -77,6 +77,8 @@ class Router:
             remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
             config_neighbors_ebgp += f"neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n"
             relation = my_as.connected_AS_dict[all_routers[voisin_ebgp].AS_number][0]
+            
+            config_address_family += f"neighbor {remote_ip} activate\n"
             if relation == "peer":
                 config_address_family += f"neighbor {remote_ip} route-map tag_pref_peer in\n"
             elif relation == "provider":
@@ -84,8 +86,6 @@ class Router:
             else:
                 config_address_family += f"neighbor {remote_ip} route-map tag_pref_customer in\n"
 
-            
-            config_address_family += f"neighbor {remote_ip} activate\n"
         self.config_bgp = f"""
 router bgp {self.AS_number}
  bgp router-id {router_id}
