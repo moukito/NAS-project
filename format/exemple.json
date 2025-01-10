@@ -4,36 +4,36 @@
             "ipv6_prefix":"2001:200:500::/64",
             "AS_number":111,
             "routers":["R1", "R2"],
-            "routage_interne":"OSPF",
-            "AS_connectes":[(110, "peer")]
+            "internal_routing":"OSPF",
+            "connected_AS":[[110, "peer", ["2001:200:601::/64", "2001:200:602::/64"]]]
         },
         {
             "ipv6_prefix":"2001:200:700::/64",
             "AS_number":110,
             "routers":["R4", "R3"],
-            "routage_interne":"RIP",
-            "AS_connectes":[(111, "peer")]
+            "internal_routing":"RIP",
+            "connected_AS":[[111, "peer", ["2001:200:601::/64", "2001:200:602::/64"]]]
         }
     ],
     "Les_routeurs":[
         {
             "hostname":"R1",
-            "liens":["R2", "R3"],
+            "links":["R2", "R3"],
             "AS_number":111
         },
         {
             "hostname":"R2",
-            "liens":["R1"],
+            "links":["R1"],
             "AS_number":111
         },
         {
             "hostname":"R4",
-            "liens":["R3"],
+            "links":["R3"],
             "AS_number":110
         },
         {
             "hostname":"R3",
-            "liens":["R4", "R1"],
+            "links":["R4", "R1"],
             "AS_number":110
         }
     ]
