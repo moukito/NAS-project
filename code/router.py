@@ -49,7 +49,7 @@ class Router:
             if my_as.internal_routing == "OSPF":
                 extra_config = f"ipv6 ospf {NOM_PROCESSUS_OSPF_PAR_DEFAUT} area 0"
             self.config_str_per_link[link] = f"interface {interface}\n no ip address\n negotiation auto\n ipv6 address {str(ip_address)}\n ipv6 enable\n {extra_config}"
-    
+        # print(f"LEN DE FOU : {self.ip_per_link}")
     def set_bgp_config_data(self, autonomous_systems:dict[int, AS], all_routers:dict[str, "Router"]):
         """
         Génère le string de configuration bgp du router self
@@ -66,7 +66,7 @@ class Router:
         config_address_family = ""
         config_neighbors_ibgp = ""
         for voisin_ibgp in self.voisins_ibgp:
-            remote_ip = all_routers[voisin_ibgp].ip_per_link[self.hostname]
+            remote_ip = list(all_routers[voisin_ibgp].ip_per_link.values())[0]
             config_neighbors_ibgp += f"neighbor {remote_ip} remote-as {self.AS_number}\n"
             config_address_family += f"neighbor {remote_ip} activate\n"
         config_neighbors_ebgp = ""
