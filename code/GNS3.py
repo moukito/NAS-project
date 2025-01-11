@@ -1,20 +1,34 @@
+import telnetlib
+
 import gns3fy
 
 
 class Connector:
     """
-    Provides functionality to interact with a GNS3 project and modify router configurations.
+    A Connector class for managing Gns3 connections and interacting with network nodes.
 
-    This class allows connecting to a GNS3 server, managing a project, and modifying
-    configurations of specific nodes within the project.
+    The Connector class is designed to interface with a Gns3 server, manage projects, 
+    connect to nodes via Telnet, and execute commands on those nodes. It provides 
+    methods for retrieving node configuration paths, establishing Telnet sessions, 
+    sending commands, and closing connections.
 
-    Type: str server: The GNS3 server connection instance.
-    Type: str project: The GNS3 project instance associated with the server connection.
+    :ivar server: Connection object to the Gns3 server.
+    :type server: Gns3Connector
+    :ivar project: Representation of the Gns3 project to interact with.
+    :type project: Project
+    :ivar telnet_session: Active Telnet session object to a network node.
+    :type telnet_session: Telnet | None
+    :ivar active_node: Name of the currently connected network node.
+    :type active_node: str | None
     """
 
     def __init__(self, project_name: str, server: str = "http://localhost:3080") -> None:
+        # Initialize the Gns3 server connection and project
         self.server = gns3fy.Gns3Connector(server)
         self.project = gns3fy.Project(project_name, connector=self.server)
+        self.project.get()  # Load project details
+        self.telnet_session = None  # Placeholder for Telnet session
+        self.active_node = None  # Currently active node
 
     def get_router_config_path(self, node_name: str) -> str:
         """
@@ -24,17 +38,120 @@ class Connector:
         :return: The path to the config file if the node exists.
         :raises ValueError: If the specified node is not found.
         """
+        # Find the specified node in the project nodes list
         node = next((n for n in self.project.nodes if n.name == node_name), None)
         if node:
-            return node.node_directory
+            return node.node_directory  # Return the node's directory
         else:
-            raise ValueError(f"Node {node_name} not found in the project.")
+            raise ValueError(f"Node {node_name} not found in the project.")  # Raise error if node not found
+
+    def telnet_connection(self, node_name: str) -> None:
+        """
+        Opens a Telnet connection to the specified node and keeps it open.
+
+        :param node_name: Name of the node to connect to.
+        """
+        # Find the specified node in the project nodes list
+        node = next((n for n in self.project.nodes if n.name == node_name), None)
+
+        if node:
+            if node.console_type != "telnet":  # Ensure the node supports Telnet
+                raise ValueError(f"Node {node_name} does not support Telnet.")
+
+            host = "localhost"
+            port = node.console  # Get the console port for Telnet
+
+            print(f"Connecting to {node_name} on {host}:{port} via Telnet...")
+
+            try:
+                # Establish Telnet connection to the node
+                self.telnet_session = telnetlib.Telnet(host, port)
+                self.telnet_session.read_until(b"#", timeout=10)  # Wait until prompt is ready
+                self.active_node = node_name  # Set the active node name
+                print(f"Telnet connection to {node_name} is now open.")
+            except Exception as e:
+                # Reset on failure and raise a connection error
+                self.telnet_session = None
+                self.active_node = None
+                raise ConnectionError(f"Failed to connect to {node_name}: {e}")
+        else:
+            raise ValueError(f"Node {node_name} not found in the project.")  # Raise error if node not found
+
+    def send_commands_to_node(self, commands: list) -> None:
+        """
+        Sends commands one at a time to the open Telnet connection, supporting Cisco's "More" prompt.
+
+        :param commands: A list of strings, each representing a command to send.
+        :raises RuntimeError: If no Telnet session is active.
+        """
+        if self.telnet_session is None or self.active_node is None:
+            # Ensure a Telnet session is active
+            raise RuntimeError("No active Telnet connection. Please establish a connection using telnet_connection().")
+
+        try:
+            for command in commands:
+                self.telnet_session.read_very_eager()  # Clear any unread output
+
+                print(f"Sending command: {command}")
+                self.telnet_session.write(command.encode('ascii') + b"\r\n")  # Send the command
+
+                output = b""  # Aggregate command output
+
+                # Read output until prompt is back
+                chunk = self.telnet_session.read_until(f"{self.active_node}#".encode('ascii'), timeout=2)
+                output += chunk
+
+                while b"--More--" in chunk:  # Handle "More" prompts in output
+                    self.telnet_session.write(b" ")  # Send space for "More"
+                    chunk = self.telnet_session.read_until(b"--More--", timeout=2)
+                    output += chunk
+
+                # Decode output and clean it from command and prompt
+                decoded_output = output.decode('ascii').replace(f"{self.active_node}#", "").replace(command, "").strip()
+                print(decoded_output)  # Print output of the command
+        except Exception as e:
+            # Catch and raise errors during command execution
+            raise RuntimeError(f"Failed to send commands to {self.active_node}: {e}")
+
+    def close_telnet_connection(self) -> None:
+        """
+        Closes the active Telnet connection gracefully.
+        """
+        if self.telnet_session:
+            try:
+                # Gracefully close the Telnet connection
+                self.telnet_session.write(b"\r\n")
+                self.telnet_session.close()
+                print(f"Telnet connection to {self.active_node} has been closed.")
+            except Exception as e:
+                # Log error during closure
+                print(f"Error closing Telnet connection: {e}")
+            finally:
+                self.telnet_session = None  # Reset Telnet session
+                self.active_node = None  # Reset active node
+        else:
+            print("No active Telnet connection to close.")  # No action needed if no active session
+
+    def __del__(self):
+        """Automatically closes Telnet connection if not closed by the user."""
+        if self.telnet_session:
+            # Warn user and close Telnet connection on object deletion
+            print("Automatically closing Telnet connection...")
+            self.close_telnet_connection()
 
 
 if __name__ == "__main__":
     connector = Connector("nap")
-    connector.project.get()
-    print(f"Project '{connector.project.name}' connection successful.")
-    print(f"Project '{connector.project.name}' has {len(connector.project.nodes)} nodes.")
-    print(f"connector.project.nodes: {connector.project.nodes}")
-    print(connector.get_router_config_path("R1") + "\\configs\\i1_startup-config.cfg")
+    print(f"Project '{connector.project.name}' connection successful.")  # Confirm project connection
+    print(f"Project '{connector.project.name}' has {len(connector.project.nodes)} nodes.")  # Node count
+    print(f"connector.project.nodes: {connector.project.nodes}")  # Print nodes in the project
+    print(connector.get_router_config_path("R1") + "\\configs\\i1_startup-config.cfg")  # Config path for node R1
+
+    # List of commands to execute on the node
+    commands = [
+        "show",  # Example command
+        "show run"  # Example: Display the running configuration
+    ]
+
+    connector.telnet_connection("R1")  # Open Telnet connection
+    connector.send_commands_to_node(commands)  # Send commands to the node
