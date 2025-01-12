@@ -45,11 +45,11 @@ class Router:
             ip_address, interface = self.subnetworks_per_link[link].get_ip_address_with_router_id(self.subnetworks_per_link[link].get_next_router_id()), interface_for_link
             self.ip_per_link[link] = ip_address
             self.interface_per_link[link] = self.interface_per_link.get(link,interface)
-            extra_config = ""
+            extra_config = "\n!"
             if my_as.internal_routing == "OSPF":
-                extra_config = f"ipv6 ospf {NOM_PROCESSUS_OSPF_PAR_DEFAUT} area 0"
+                extra_config = f"ipv6 ospf {NOM_PROCESSUS_OSPF_PAR_DEFAUT} area 0\n!"
             elif my_as.internal_routing == "RIP":
-                extra_config = f"ipv6 rip {NOM_PROCESSUS_OSPF_PAR_DEFAUT} enable"
+                extra_config = f"ipv6 rip {NOM_PROCESSUS_OSPF_PAR_DEFAUT} enable\n!"
             self.config_str_per_link[link] = f"interface {interface}\n no ip address\n negotiation auto\n ipv6 address {str(ip_address)}\n ipv6 enable\n {extra_config}"
         # print(f"LEN DE FOU : {self.ip_per_link}")
     def set_bgp_config_data(self, autonomous_systems:dict[int, AS], all_routers:dict[str, "Router"]):
