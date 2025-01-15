@@ -1223,5 +1223,8 @@ code/__pycache__/ipv6.cpython-312.pyc
 code/__pycache__/router.cpython-312.pyc
 code/__pycache__/router.cpython-313.pyc
 code/__pycache__/writer.cpython-312.pyc
+code/__pycache__/parser.cpython-312.pyc
+code/__pycache__/saveFile.cpython-312.pyc
+
 .idea
 *.log

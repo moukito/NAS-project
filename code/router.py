@@ -34,11 +34,13 @@ class Router:
                 interface_to_remove = link["interface"]
                 if interface_to_remove in self.available_interfaces:
                     self.available_interfaces.remove(interface_to_remove)
+                    self.interface_per_link[link["hostname"]] = interface_to_remove
             else:
                 try:
                     interface_to_remove = connector.get_used_interface_for_link(self.hostname, link["hostname"])
                     if LINKS_STANDARD[interface_to_remove] in self.available_interfaces:
                         self.available_interfaces.remove(LINKS_STANDARD[interface_to_remove])
+                        self.interface_per_link[link["hostname"]] = LINKS_STANDARD[interface_to_remove]
                 except Exception as exce:
                     print("Error on used interface cleanup", exce)
 
@@ -67,13 +69,14 @@ class Router:
                 self.passive_interfaces.add(link["hostname"])
             ip_address, interface = self.subnetworks_per_link[link["hostname"]].get_ip_address_with_router_id(self.subnetworks_per_link[link["hostname"]].get_next_router_id()), interface_for_link
             self.ip_per_link[link["hostname"]] = ip_address
+            #print(self.interface_per_link.get(link["hostname"],interface))
             self.interface_per_link[link["hostname"]] = self.interface_per_link.get(link["hostname"],interface)
             extra_config = "\n!\n"
             if my_as.internal_routing == "OSPF":
                 extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
             elif my_as.internal_routing == "RIP":
                 extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
-            self.config_str_per_link[link["hostname"]] = f"interface {interface}\n no ip address\n negotiation auto\n ipv6 address {str(ip_address)}\n ipv6 enable\n {extra_config}"
+            self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no ip address\n negotiation auto\n ipv6 address {str(ip_address)}\n ipv6 enable\n {extra_config}"
         # print(f"LEN DE FOU : {self.ip_per_link}")
     def set_bgp_config_data(self, autonomous_systems:dict[int, AS], all_routers:dict[str, "Router"]):
         """
@@ -94,20 +97,20 @@ class Router:
         for voisin_ibgp in self.voisins_ibgp:
             remote_ip = list(all_routers[voisin_ibgp].ip_per_link.values())[0]
             config_neighbors_ibgp += f"neighbor {remote_ip} remote-as {self.AS_number}\n"
-            config_address_family += f"neighbor {remote_ip} activate\n"
+            config_address_family += f"  neighbor {remote_ip} activate\n"
         config_neighbors_ebgp = ""
         for voisin_ebgp in self.voisins_ebgp:
             remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
             config_neighbors_ebgp += f"neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n"
             relation = my_as.connected_AS_dict[all_routers[voisin_ebgp].AS_number][0]
             
-            config_address_family += f"neighbor {remote_ip} activate\n"
+            config_address_family += f"  neighbor {remote_ip} activate\n"
             if relation == "peer":
-                config_address_family += f"neighbor {remote_ip} route-map tag_pref_peer in\n"
+                config_address_family += f"  neighbor {remote_ip} route-map tag_pref_peer in\n"
             elif relation == "provider":
-                config_address_family += f"neighbor {remote_ip} route-map tag_pref_provider in\n"
+                config_address_family += f"  neighbor {remote_ip} route-map tag_pref_provider in\n"
             else:
-                config_address_family += f"neighbor {remote_ip} route-map tag_pref_customer in\n"
+                config_address_family += f"  neighbor {remote_ip} route-map tag_pref_customer in\n"
 
         self.config_bgp = f"""
 router bgp {self.AS_number}
@@ -116,8 +119,10 @@ router bgp {self.AS_number}
  no bgp default ipv4-unicast
  {config_neighbors_ibgp}
  {config_neighbors_ebgp}
+ !
  address-family ipv4
  exit-address-family
+ !
  address-family ipv6
  {config_address_family}
  exit-address-family
