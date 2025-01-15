@@ -23,9 +23,14 @@ class Connector:
     :type active_node: str | None
     """
 
-    def __init__(self, project_name: str, server: str = "http://localhost:3080") -> None:
+    def __init__(self, project_name: str = None, server: str = "http://localhost:3080") -> None:
         # Initialize the Gns3 server connection and project
         self.server = gns3fy.Gns3Connector(server)
+        if project_name is None:
+            for project in self.server.get_projects():
+                if project["status"] == "opened":
+                    project_name = project["name"]
+                    break
         self.project = gns3fy.Project(project_name, connector=self.server)
         self.project.get()  # Load project details
         self.telnet_session = None  # Placeholder for Telnet session
@@ -103,26 +108,28 @@ class Connector:
             raise RuntimeError("No active Telnet connection. Please establish a connection using telnet_connection().")
 
         try:
-            for command in commands:
-                self.telnet_session.read_very_eager()  # Clear any unread output
+            with open("command_output.log", "a") as log_file:  # Open a log file in append mode
+                for command in commands:
+                    self.telnet_session.read_very_eager()  # Clear any unread output
 
-                print(f"Sending command: {command}")
-                self.telnet_session.write(command.encode('ascii') + b"\r\n")  # Send the command
+                    print(f"Sending command: {command}")
+                    self.telnet_session.write(command.encode('ascii') + b"\r\n")  # Send the command
 
-                output = b""  # Aggregate command output
+                    output = b""  # Aggregate command output
 
-                # Read output until prompt is back
-                chunk = self.telnet_session.read_until(f"{self.active_node}#".encode('ascii'), timeout=2)
-                output += chunk
-
-                while b"--More--" in chunk:  # Handle "More" prompts in output
-                    self.telnet_session.write(b" ")  # Send space for "More"
-                    chunk = self.telnet_session.read_until(b"--More--", timeout=2)
+                    # Read output until prompt is back
+                    chunk = self.telnet_session.read_until(f"{self.active_node}#".encode('ascii'), timeout=2)
                     output += chunk
 
-                # Decode output and clean it from command and prompt
-                decoded_output = output.decode('ascii').replace(f"{self.active_node}#", "").replace(command, "").strip()
-                print(decoded_output)  # Print output of the command
+                    while b"--More--" in chunk:  # Handle "More" prompts in output
+                        self.telnet_session.write(b" ")  # Send space for "More"
+                        chunk = self.telnet_session.read_until(b"--More--", timeout=2)
+                        output += chunk
+
+                    # Decode output and clean it from command and prompt
+                    decoded_output = output.decode('ascii').replace(f"{self.active_node}#", "").replace(command,
+                                                                                                        "").strip()
+                    log_file.write(f"Command: {command}\n{decoded_output}\n\n")  # Write to log file
         except Exception as e:
             # Catch and raise errors during command execution
             raise RuntimeError(f"Failed to send commands to {self.active_node}: {e}")
@@ -243,7 +250,7 @@ class Connector:
 
 
 if __name__ == "__main__":
-    connector = Connector("projet_TP3_BGP_2")
+    connector = Connector()
     print(f"Project '{connector.project.name}' connection successful.")  # Confirm project connection
     print(f"Project '{connector.project.name}' has {len(connector.project.nodes)} nodes.")  # Node count
     print(f"connector.project.nodes: {connector.project.nodes}")  # Print nodes in the project
