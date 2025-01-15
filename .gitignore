@@ -1228,3 +1228,4 @@ code/__pycache__/saveFile.cpython-312.pyc
 
 .idea
 *.log
+.run
