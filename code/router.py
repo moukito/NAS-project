@@ -55,7 +55,7 @@ class Router:
         for link in self.links:
             interface_for_link = self.available_interfaces.pop(0)
             if not self.subnetworks_per_link.get(link["hostname"], False):
-                if link in my_as.hashset_routers:
+                if link["hostname"] in my_as.hashset_routers:
                     self.subnetworks_per_link[link["hostname"]] = my_as.ipv6_prefix.next_subnetwork_with_n_routers(2)
                     all_routers[link["hostname"]].subnetworks_per_link[self.hostname] = self.subnetworks_per_link[link["hostname"]]
                 else:
@@ -63,16 +63,16 @@ class Router:
                     picked_transport_interface = SubNetwork(my_as.connected_AS_dict[all_routers[link["hostname"]].AS_number][1][self.hostname], 2)
                     self.subnetworks_per_link[link["hostname"]] = picked_transport_interface
                     all_routers[link["hostname"]].subnetworks_per_link[self.hostname] = picked_transport_interface
-            elif link not in my_as.hashset_routers:
-                self.passive_interfaces.add(link)
+            elif link["hostname"] not in my_as.hashset_routers:
+                self.passive_interfaces.add(link["hostname"])
             ip_address, interface = self.subnetworks_per_link[link["hostname"]].get_ip_address_with_router_id(self.subnetworks_per_link[link["hostname"]].get_next_router_id()), interface_for_link
             self.ip_per_link[link["hostname"]] = ip_address
             self.interface_per_link[link["hostname"]] = self.interface_per_link.get(link["hostname"],interface)
-            extra_config = "\n!"
+            extra_config = "\n!\n"
             if my_as.internal_routing == "OSPF":
-                extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!"
+                extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
             elif my_as.internal_routing == "RIP":
-                extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!"
+                extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
             self.config_str_per_link[link["hostname"]] = f"interface {interface}\n no ip address\n negotiation auto\n ipv6 address {str(ip_address)}\n ipv6 enable\n {extra_config}"
         # print(f"LEN DE FOU : {self.ip_per_link}")
     def set_bgp_config_data(self, autonomous_systems:dict[int, AS], all_routers:dict[str, "Router"]):

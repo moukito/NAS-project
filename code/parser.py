@@ -5,6 +5,7 @@ import os
 from autonomous_system import AS
 from router import Router
 from ipv6 import SubNetwork
+from writer import get_final_config_string
 
 AS_LIST_NAME = "Les_AS"
 ROUTER_LIST_NAME = "Les_routeurs"
@@ -62,5 +63,5 @@ if __name__ == "__main__":
 
     for routeur in les_routeurs:
         routeur.set_bgp_config_data(as_dico, routeur_dico)
-        print(routeur.config_bgp)
+        print(get_final_config_string(as_dico[routeur.AS_number], routeur))
     # print(hex(256))
