@@ -5,30 +5,30 @@
             "AS_number":111,
             "routers":["R1", "R2"],
             "internal_routing":"OSPF",
-            "connected_AS":[[110, "peer", {"R1":"2001:200:601::/64"}]]
+            "connected_AS":[[110, "peer", {"R1":"2001:200:601::/64", "R2":"2001:200:602::/64"}]]
         },
         {
             "ipv6_prefix":"2001:200:700::/64",
             "AS_number":110,
             "routers":["R4", "R3"],
             "internal_routing":"RIP",
-            "connected_AS":[[111, "peer", {"R3":"2001:200:601::/64"}]]
+            "connected_AS":[[111, "peer", {"R3":"2001:200:601::/64", "R4":"2001:200:602::/64"}]]
         }
     ],
     "Les_routeurs":[
         {
             "hostname":"R1",
-            "links":[{"type":"Router", "hostname":"R2"}, {"type":"Router", "hostname":"R3"}],
+            "links":[{"type":"Router", "hostname":"R2"}, {"type":"Router", "hostname":"R3", "interface":"GigabitEthernet3/0"}],
             "AS_number":111
         },
         {
             "hostname":"R2",
-            "links":[{"type":"Router", "hostname":"R1"}],
+            "links":[{"type":"Router", "hostname":"R1"},{"type":"Router", "hostname":"R4"}],
             "AS_number":111
         },
         {
             "hostname":"R4",
-            "links":[{"type":"Router", "hostname":"R3"}],
+            "links":[{"type":"Router", "hostname":"R3"},{"type":"Router", "hostname":"R2"}],
             "AS_number":110
         },
         {

@@ -43,6 +43,47 @@ class Router:
                         self.interface_per_link[link["hostname"]] = LINKS_STANDARD[interface_to_remove]
                 except Exception as exce:
                     print("Error on used interface cleanup", exce)
+    def create_missing_links(self, autonomous_systems:dict[int, AS], all_routers:dict[str, "Router"], connector:Connector):
+        """
+        Enlève les interfaces déjà utilisées de self.available_interfaces
+
+        self (méthode), dictionnaire numéro_d'AS:AS, dictionnaire nom_des_routeurs:Router et Connector au projet GNS3 local
+        sorties : changement de self.available_interfaces
+        """
+        for link in self.links:
+            if link.get("interface", False):
+                interface_1_to_use = link["interface"]
+                other_link = None
+                for other in all_routers[link["hostname"]].links:
+                    if other["hostname"] == self.hostname:
+                        other_link = other
+                        break
+                if other_link != None:
+                    if other_link.get("interface", False):
+                        interface_2_to_use = other_link["interface"]
+                    else:
+                        interface_2_to_use = all_routers[link["hostname"]].interface_per_link[self.hostname]
+                    print(f"1 : {self.hostname} {link["hostname"]}")
+                    connector.create_link_if_it_doesnt_exist(self.hostname, link["hostname"], LINKS_STANDARD.index(interface_1_to_use), LINKS_STANDARD.index(interface_2_to_use))
+                else:
+                    raise KeyError("Le routeur cible n'a pas de lien dans l'autre sens")
+            else:
+                interface_1_to_use = self.interface_per_link[link["hostname"]]
+                other_link = None
+                for other in all_routers[link["hostname"]].links:
+                    if other["hostname"] == self.hostname:
+                        other_link = other
+                        break
+                if other_link != None:
+                    if other_link.get("interface", False):
+                        interface_2_to_use = other_link["interface"]
+                    else:
+                        interface_2_to_use = all_routers[link["hostname"]].interface_per_link[self.hostname]
+                    print(f"1 : {self.hostname} {link["hostname"]}")
+                    connector.create_link_if_it_doesnt_exist(self.hostname, link["hostname"], LINKS_STANDARD.index(interface_1_to_use), LINKS_STANDARD.index(interface_2_to_use))
+                else:
+                    raise KeyError("Le routeur cible n'a pas de lien dans l'autre sens")
+            
 
 
     def set_interface_configuration_data(self, autonomous_systems:dict[int, AS], all_routers:dict[str, "Router"]):
@@ -55,22 +96,26 @@ class Router:
         my_as = autonomous_systems[self.AS_number]
         
         for link in self.links:
-            interface_for_link = self.available_interfaces.pop(0)
+            if not self.interface_per_link.get(link["hostname"], False):
+                interface_for_link = self.available_interfaces.pop(0)
+            else:
+                interface_for_link = "FastEthernet2019857/0"
+            
+            self.interface_per_link[link["hostname"]] = self.interface_per_link.get(link["hostname"],interface_for_link)
             if not self.subnetworks_per_link.get(link["hostname"], False):
                 if link["hostname"] in my_as.hashset_routers:
                     self.subnetworks_per_link[link["hostname"]] = my_as.ipv6_prefix.next_subnetwork_with_n_routers(2)
                     all_routers[link["hostname"]].subnetworks_per_link[self.hostname] = self.subnetworks_per_link[link["hostname"]]
                 else:
-                    self.passive_interfaces.add(interface_for_link)
+                    self.passive_interfaces.add(self.interface_per_link[link["hostname"]])
                     picked_transport_interface = SubNetwork(my_as.connected_AS_dict[all_routers[link["hostname"]].AS_number][1][self.hostname], 2)
                     self.subnetworks_per_link[link["hostname"]] = picked_transport_interface
                     all_routers[link["hostname"]].subnetworks_per_link[self.hostname] = picked_transport_interface
             elif link["hostname"] not in my_as.hashset_routers:
-                self.passive_interfaces.add(link["hostname"])
-            ip_address, interface = self.subnetworks_per_link[link["hostname"]].get_ip_address_with_router_id(self.subnetworks_per_link[link["hostname"]].get_next_router_id()), interface_for_link
+                self.passive_interfaces.add(self.interface_per_link[link["hostname"]])
+            ip_address = self.subnetworks_per_link[link["hostname"]].get_ip_address_with_router_id(self.subnetworks_per_link[link["hostname"]].get_next_router_id())
             self.ip_per_link[link["hostname"]] = ip_address
             #print(self.interface_per_link.get(link["hostname"],interface))
-            self.interface_per_link[link["hostname"]] = self.interface_per_link.get(link["hostname"],interface)
             extra_config = "\n!\n"
             if my_as.internal_routing == "OSPF":
                 extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"

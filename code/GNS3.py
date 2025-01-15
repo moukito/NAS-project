@@ -186,11 +186,62 @@ class Connector:
                 if node["node_id"] == node_2.node_id:
                     found += 1
             if found == 2:
-                interface = link.nodes[i]["adapter_number"]
+                interface = link.nodes[node_1_index]["adapter_number"]
         if interface == None:
             raise KeyError(f"Link between {r1} and {r2} not found in the project.")
         else:
             return interface
+    def create_link_if_it_doesnt_exist(self, r1:str, r2:str, interface_1:int, interface_2:int):
+        """
+        Creates the link between r1 and r2 using the given interface if it doesn't exist
+
+        input : r1 and r2, hostname strings of the 2 routers, interface_1 the index in the standard interfaces of router r1 and interface_2 the same for r2
+        returns : nothing
+        raises : ValueError if the interfaces needed are already either in use
+        """
+        try:
+            node_1 = self.get_node(r1)
+            node_2 = self.get_node(r2)
+            interface_1_real = None
+            interface_2_real = None
+            already_found = False
+            for link in self.project.links:
+                found = 0
+                node_1_index = None
+                node_2_index = None
+                for (i, node) in enumerate(link.nodes):
+                    if node["node_id"] == node_1.node_id:
+                        node_1_index = i
+                        found += 1
+                    if node["node_id"] == node_2.node_id:
+                        node_2_index = i
+                        found += 1
+                if found == 2:
+                    interface_1_real = link.nodes[node_1_index]["adapter_number"]
+                    interface_2_real = link.nodes[node_2_index]["adapter_number"]
+                    already_found = True
+            if interface_1_real == interface_1 or already_found:
+                if interface_2_real == interface_2 or already_found:
+                    pass
+                else:
+                    raise ValueError(f"Interface {interface_1} already in use")
+            else:
+                if interface_2_real == interface_2:
+                    raise ValueError(f"Interface {interface_2} already in use")
+                else:
+                    nodes = [
+                        {"node_id":node_1.node_id, "adapter_number":interface_1, "port_number":0},
+                        {"node_id":node_2.node_id, "adapter_number":interface_2, "port_number":0}
+                    ]
+                    #nodes[0].pop("__pydantic_initialised__")
+                    #nodes[1].pop("__pydantic_initialised__")
+                    link = gns3fy.Link(project_id=self.project.project_id, connector=self.server, nodes=nodes)
+                    link.create()
+
+        except Exception as exce:
+            print("Had an issue creating links : ", exce)
+
+
 if __name__ == "__main__":
     connector = Connector("projet_TP3_BGP_2")
     print(f"Project '{connector.project.name}' connection successful.")  # Confirm project connection
