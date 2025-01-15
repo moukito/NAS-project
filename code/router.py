@@ -1,6 +1,6 @@
 from autonomous_system import AS
 from ipv6 import SubNetwork
-from writer import LINKS_STANDARD, NOM_PROCESSUS_OSPF_PAR_DEFAUT
+from writer import LINKS_STANDARD, NOM_PROCESSUS_IGP_PAR_DEFAUT
 
 class Router:
     def __init__(self, hostname: str, links, AS_number:int):
@@ -47,9 +47,9 @@ class Router:
             self.interface_per_link[link] = self.interface_per_link.get(link,interface)
             extra_config = "\n!"
             if my_as.internal_routing == "OSPF":
-                extra_config = f"ipv6 ospf {NOM_PROCESSUS_OSPF_PAR_DEFAUT} area 0\n!"
+                extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!"
             elif my_as.internal_routing == "RIP":
-                extra_config = f"ipv6 rip {NOM_PROCESSUS_OSPF_PAR_DEFAUT} enable\n!"
+                extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!"
             self.config_str_per_link[link] = f"interface {interface}\n no ip address\n negotiation auto\n ipv6 address {str(ip_address)}\n ipv6 enable\n {extra_config}"
         # print(f"LEN DE FOU : {self.ip_per_link}")
     def set_bgp_config_data(self, autonomous_systems:dict[int, AS], all_routers:dict[str, "Router"]):
