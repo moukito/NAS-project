@@ -55,13 +55,14 @@ def get_final_config_string(AS:AS, router:"Router"):
     for config_string in router.config_str_per_link.values():
         total_interface_string += config_string
     config = f"""!
-
 !
-! Last configuration change at 16:10:58 UTC Wed Dec 11 2024
 !
-version 15.2
+!
+!
+!
 service timestamps debug datetime msec
 service timestamps log datetime msec
+no service password-encryption
 !
 hostname {router.hostname}
 !
@@ -95,6 +96,7 @@ multilink bundle-name authenticated
 !
 !
 ip tcp synwait-time 5
+no cdp log mismatch duplex
 ! 
 !
 !
@@ -107,9 +109,7 @@ ip tcp synwait-time 5
 !
 !
 !
-
 {total_interface_string}
-
 {router.config_bgp}
 !
 ip forward-protocol nd
