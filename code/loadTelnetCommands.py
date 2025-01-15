@@ -1,4 +1,4 @@
-def loadFile(file):
+def load_file(file):
     with open(file, 'r') as file:
         lines = file.readlines()
         lines_list = [line.strip() for line in lines]
