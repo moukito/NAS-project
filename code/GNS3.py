@@ -1,3 +1,4 @@
+import os
 import telnetlib
 
 import gns3fy
@@ -41,7 +42,20 @@ class Connector:
         # Find the specified node in the project nodes list
         node = next((n for n in self.project.nodes if n.name == node_name), None)
         if node:
-            return node.node_directory  # Return the node's directory
+            path = os.path.join(node.node_directory, "configs")
+            # Check if the config path exists
+            if not os.path.isdir(path):
+                raise FileNotFoundError(f"The configs directory does not exist at {path}")
+
+            # Search for the file containing 'startup-config'
+            for root, _, files in os.walk(path):
+                for file in files:
+                    if "startup-config.cfg" in file:
+                        # Return the full file path if found
+                        return os.path.join(root, file)  # Return the node's directory
+
+            # Raise an exception if no matching file is found
+            raise FileNotFoundError(f"No startup-config file found in {path}")
         else:
             raise ValueError(f"Node {node_name} not found in the project.")  # Raise error if node not found
 
@@ -145,7 +159,7 @@ if __name__ == "__main__":
     print(f"Project '{connector.project.name}' connection successful.")  # Confirm project connection
     print(f"Project '{connector.project.name}' has {len(connector.project.nodes)} nodes.")  # Node count
     print(f"connector.project.nodes: {connector.project.nodes}")  # Print nodes in the project
-    print(connector.get_router_config_path("R1") + "\\configs\\i1_startup-config.cfg")  # Config path for node R1
+    print(connector.get_router_config_path("R1"))  # Config path for node R1
 
     # List of commands to execute on the node
     commands = [
