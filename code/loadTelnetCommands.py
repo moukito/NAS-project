@@ -6,4 +6,4 @@ def load_file(file):
 
 
 if __name__ == "__main__":
-    print(loadFile("format/telnetCommands"))
+    print(load_file("format/telnetCommands"))
