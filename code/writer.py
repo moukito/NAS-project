@@ -23,9 +23,9 @@ def get_ospf_config_string(AS, router):
     sortie : str contenant la configuration correspondante
     """
     ospf_config_string = f"ipv6 router ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT}\n"
-    ospf_config_string += f" router-id {router.router_id}\n"
+    ospf_config_string += f" router-id {router.router_id}.{router.router_id}.{router.router_id}.{router.router_id}\n"
     for passive in router.passive_interfaces:
-        ospf_config_string += f"passive-interface {passive}\n"
+        ospf_config_string += f" passive-interface {passive}\n"
     return ospf_config_string
 
 def get_rip_config_string(AS, router):
@@ -37,7 +37,7 @@ def get_rip_config_string(AS, router):
     """
     rip_config_string = f"ipv6 router rip {NOM_PROCESSUS_IGP_PAR_DEFAUT}\n"
     for passive in router.passive_interfaces:
-        rip_config_string += f"passive-interface {passive}\n"
+        rip_config_string += f" passive-interface {passive}\n"
     return rip_config_string
 
 def get_final_config_string(AS:AS, router:"Router"):
