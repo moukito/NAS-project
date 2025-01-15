@@ -118,7 +118,7 @@ ip forward-protocol nd
 no ip http server
 no ip http secure-server
 !
-
+!
 {internal_routing}
 !
 {LOCAL_PREF_ROUTE_MAPS}

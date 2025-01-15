@@ -97,20 +97,20 @@ class Router:
         for voisin_ibgp in self.voisins_ibgp:
             remote_ip = list(all_routers[voisin_ibgp].ip_per_link.values())[0]
             config_neighbors_ibgp += f"neighbor {remote_ip} remote-as {self.AS_number}\n"
-            config_address_family += f"neighbor {remote_ip} activate\n"
+            config_address_family += f"  neighbor {remote_ip} activate\n"
         config_neighbors_ebgp = ""
         for voisin_ebgp in self.voisins_ebgp:
             remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
             config_neighbors_ebgp += f"neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n"
             relation = my_as.connected_AS_dict[all_routers[voisin_ebgp].AS_number][0]
             
-            config_address_family += f" neighbor {remote_ip} activate\n"
+            config_address_family += f"  neighbor {remote_ip} activate\n"
             if relation == "peer":
-                config_address_family += f" neighbor {remote_ip} route-map tag_pref_peer in\n"
+                config_address_family += f"  neighbor {remote_ip} route-map tag_pref_peer in\n"
             elif relation == "provider":
-                config_address_family += f" neighbor {remote_ip} route-map tag_pref_provider in\n"
+                config_address_family += f"  neighbor {remote_ip} route-map tag_pref_provider in\n"
             else:
-                config_address_family += f" neighbor {remote_ip} route-map tag_pref_customer in\n"
+                config_address_family += f"  neighbor {remote_ip} route-map tag_pref_customer in\n"
 
         self.config_bgp = f"""
 router bgp {self.AS_number}
