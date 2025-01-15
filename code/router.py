@@ -17,7 +17,7 @@ class Router:
         self.voisins_ebgp = {}
         self.voisins_ibgp = set()
         self.available_interfaces = [LINKS_STANDARD[i] for i in range(len(LINKS_STANDARD))]
-        self.config_bgp = ""
+        self.config_bgp = "!"
     
     def __str__(self):
         return f"hostname:{self.hostname}\n liens:{self.links}\n as_number:{self.AS_number}"
@@ -76,7 +76,7 @@ class Router:
                 extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
             elif my_as.internal_routing == "RIP":
                 extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
-            self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no ip address\n negotiation auto\n ipv6 address {str(ip_address)}\n ipv6 enable\n {extra_config}"
+            self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no ip address\n negotiation auto\n ipv6 address {str(ip_address)}/64\n ipv6 enable\n {extra_config}"
         # print(f"LEN DE FOU : {self.ip_per_link}")
     def set_bgp_config_data(self, autonomous_systems:dict[int, AS], all_routers:dict[str, "Router"]):
         """
@@ -86,7 +86,7 @@ class Router:
         sorties : changement de plusieurs attributs de l'objet, mais surtout de config_bgp qui contient le string de configuration à la fin de l'exécution de la fonction
         """
         my_as = autonomous_systems[self.AS_number]
-        router_id = my_as.ipv6_prefix.get_ip_address_with_router_id(my_as.ipv6_prefix.get_next_router_id())
+        router_id = my_as.ipv6_prefix.get_next_router_id()
         self.router_id = router_id
         self.voisins_ibgp = my_as.hashset_routers.difference(set([self.hostname]))
         for link in self.links:
@@ -114,7 +114,7 @@ class Router:
 
         self.config_bgp = f"""
 router bgp {self.AS_number}
- bgp router-id {router_id}
+ bgp router-id {router_id}.{router_id}.{router_id}.{router_id}
  bgp log-neighbor-changes
  no bgp default ipv4-unicast
  {config_neighbors_ibgp}
