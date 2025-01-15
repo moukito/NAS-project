@@ -23,9 +23,14 @@ class Connector:
     :type active_node: str | None
     """
 
-    def __init__(self, project_name: str, server: str = "http://localhost:3080") -> None:
+    def __init__(self, project_name: str = None, server: str = "http://localhost:3080") -> None:
         # Initialize the Gns3 server connection and project
         self.server = gns3fy.Gns3Connector(server)
+        if project_name is None:
+            for project in self.server.get_projects():
+                if project["status"] == "opened":
+                    project_name = project["name"]
+                    break
         self.project = gns3fy.Project(project_name, connector=self.server)
         self.project.get()  # Load project details
         self.telnet_session = None  # Placeholder for Telnet session
@@ -194,7 +199,7 @@ class Connector:
         else:
             return interface
 if __name__ == "__main__":
-    connector = Connector("projet_TP3_BGP_2")
+    connector = Connector()
     print(f"Project '{connector.project.name}' connection successful.")  # Confirm project connection
     print(f"Project '{connector.project.name}' has {len(connector.project.nodes)} nodes.")  # Node count
     print(f"connector.project.nodes: {connector.project.nodes}")  # Print nodes in the project
