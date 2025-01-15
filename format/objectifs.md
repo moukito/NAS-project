@@ -11,11 +11,11 @@ Chaque AS a :
 - un préfixe IPV6
 - une liste de routeurs (chaque hostname doit être unique et ne peut pas être dans 2 AS)
 - nom du protocole de routage interne (ou identifiant unique pour celui-ci)
-- une liste des AS connus avec qui on veut parler qui nous dit si ils sont peer, fournisseurs ou clients, ET les réseaux d'interconnection à utiliser 
+- une liste des AS connus avec qui on veut parler qui nous dit si ils sont peer, fournisseurs ou clients, ET les réseaux d'interconnection à utiliser PAR INTERCONNECTION (préciser lesquels sont pour lesquels en remplaçant les réseaux d'interconnection par un dictionnaire avec comme clés les routers de l'AS et valeurs les sous-réseaux)
 
 ## Liste de tous les routeurs
 
 Chaque routeur a :
 - son hostname
-- une liste des appareils auxquels il est connecté (hostname si routeur, autre identifiant si switch/PC)
+- une liste des appreils auxquels il est connecté avec chaque autre appareil sous forme de dictionnaire {"type":"Router"|"Switch"|..., "interface":"nom de l'interface"}, interface peut être ommis
 - son AS number

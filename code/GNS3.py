@@ -138,14 +138,53 @@ class Connector:
             # Warn user and close Telnet connection on object deletion
             print("Automatically closing Telnet connection...")
             self.close_telnet_connection()
+    def get_node(self, node_name:str) -> dict:
+        """
+        Returns the node of name node_name 's data, or raises an error if it doesn't exist in the project
 
+        input:node_name : hostname of node as a string
+        returns: the corresponding node dict
+        raises ValueError: If the specified node is not found.
+        """
+        # Find the specified node in the project nodes list
+        node = next((n for n in self.project.nodes if n.name == node_name), None)
+        if node:
+            return node # Return the node's directory
+        else:
+            raise ValueError(f"Node {node_name} not found in the project.")  # Raise error if node not found
+    def get_used_interface_for_link(self, r1:str, r2:str):
+        """
+        Returns the interface used for a link FROM r1 TO r2 (must be used the other way to get both ways)
 
+        input: r1 and r2, hostname strings
+        returns: name of interface (assumed to be of shape GigabitEtherneti/0) or None if the link doesn't exist in the GNS3 project
+        """
+        node_1 = self.get_node(r1)
+        node_2 = self.get_node(r2)
+        interface = None
+        for link in self.project.links:
+            found = 0
+            node_1_index = None
+            for (i, node) in enumerate(link.nodes):
+                if node["node_id"] == node_1.node_id:
+                    node_1_index = i
+                    found += 1
+                if node["node_id"] == node_2.node_id:
+                    found += 1
+            if found == 2:
+                interface = link.nodes[i]["adapter_number"]
+        if interface == None:
+            raise KeyError(f"Link between {r1} and {r2} not found in the project.")
+        else:
+            return interface
 if __name__ == "__main__":
-    connector = Connector("nap")
+    connector = Connector("projet_TP3_BGP_2")
     print(f"Project '{connector.project.name}' connection successful.")  # Confirm project connection
     print(f"Project '{connector.project.name}' has {len(connector.project.nodes)} nodes.")  # Node count
     print(f"connector.project.nodes: {connector.project.nodes}")  # Print nodes in the project
+    print(f"connector.project.links: {connector.project.links}")
     print(connector.get_router_config_path("R1") + "\\configs\\i1_startup-config.cfg")  # Config path for node R1
+    print(f"{connector.get_used_interface_for_link("R1", "R2")}")
 
     # List of commands to execute on the node
     commands = [
@@ -154,4 +193,4 @@ if __name__ == "__main__":
     ]
 
     connector.telnet_connection("R1")  # Open Telnet connection
-    connector.send_commands_to_node(commands)  # Send commands to the node
+    #connector.send_commands_to_node(commands)  # Send commands to the node
