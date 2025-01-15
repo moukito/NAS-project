@@ -52,7 +52,7 @@ def get_final_config_string(AS:AS, router:"Router"):
     else:
         internal_routing = get_rip_config_string(AS, router)
     total_interface_string = ""
-    for (link, config_string) in router.config_str_per_link:
+    for config_string in router.config_str_per_link.values():
         total_interface_string += config_string
     config = f"""!
 

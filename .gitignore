@@ -1216,3 +1216,10 @@ env/lib/python3.12/site-packages/urllib3-2.3.0.dist-info/WHEEL
 env/lib/python3.12/site-packages/urllib3-2.3.0.dist-info/licenses/LICENSE.txt
 code/__pycache__/autonomous_system.cpython-313.pyc
 code/__pycache__/ipv6.cpython-313.pyc
+code/__pycache__/autonomous_system.cpython-312.pyc
+code/__pycache__/GNS3.cpython-312.pyc
+code/__pycache__/GNS3.cpython-313.pyc
+code/__pycache__/ipv6.cpython-312.pyc
+code/__pycache__/router.cpython-312.pyc
+code/__pycache__/router.cpython-313.pyc
+code/__pycache__/writer.cpython-312.pyc
