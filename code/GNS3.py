@@ -173,6 +173,20 @@ class Connector:
             return node # Return the node's directory
         else:
             raise ValueError(f"Node {node_name} not found in the project.")  # Raise error if node not found
+    def create_node(self, node_name:str, template:str):
+        """
+        Creates a node with the given name and template in the project
+        
+        input : node_name, the name of the node (equivalent to the hostname for a router !) and the template name (for example, "c7200" for the routers we use)
+        output : creates the node in the GNS project, will raise an error if the node already exists
+        """
+        node = gns3fy.Node(
+            project_id=self.project.project_id,
+            connector=self.server,
+            name=node_name,
+            template=template
+        )
+        node.create()
     def get_used_interface_for_link(self, r1:str, r2:str):
         """
         Returns the interface used for a link FROM r1 TO r2 (must be used the other way to get both ways)

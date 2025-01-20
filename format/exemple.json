@@ -3,7 +3,7 @@
         {
             "ipv6_prefix":"2001:200:500::/64",
             "AS_number":111,
-            "routers":["R1", "R2"],
+            "routers":["R1", "R2", "R5"],
             "internal_routing":"OSPF",
             "connected_AS":[[110, "peer", {"R1":"2001:200:601::/64", "R2":"2001:200:602::/64"}]]
         },
@@ -23,9 +23,15 @@
         },
         {
             "hostname":"R2",
-            "links":[{"type":"Router", "hostname":"R1"},{"type":"Router", "hostname":"R4"}],
+            "links":[{"type":"Router", "hostname":"R1"},{"type":"Router", "hostname":"R4"},{"type":"Router", "hostname":"R5"}],
             "AS_number":111
         },
+        {
+            "hostname":"R5",
+            "links":[{"type":"Router", "hostname":"R2"}],
+            "AS_number":111
+        },
+        
         {
             "hostname":"R4",
             "links":[{"type":"Router", "hostname":"R3"},{"type":"Router", "hostname":"R2"}],
@@ -36,5 +42,6 @@
             "links":[{"type":"Router", "hostname":"R4"}, {"type":"Router", "hostname":"R1"}],
             "AS_number":110
         }
+    
     ]
 }

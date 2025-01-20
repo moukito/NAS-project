@@ -2,6 +2,7 @@ import parser
 import writer
 from GNS3 import Connector
 from saveFile import write_string_to_file
+from time import sleep
 
 
 def main():
@@ -14,6 +15,9 @@ def main():
     router_dico = parser.router_list_into_hostname_dictionary(les_routers)
 
     # Iterate over routers and create config files
+    for router in les_routers:
+
+        router.create_router_if_missing(connector)
     for router in les_routers:
         # Generate the router configuration
         router.cleanup_used_interfaces(as_dico, router_dico, connector)

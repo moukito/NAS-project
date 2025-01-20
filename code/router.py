@@ -26,7 +26,7 @@ class Router:
         """
         Enlève les interfaces déjà utilisées de self.available_interfaces
 
-        self (méthode), dictionnaire numéro_d'AS:AS, dictionnaire nom_des_routeurs:Router et Connector au projet GNS3 local
+        entrées : self (méthode), dictionnaire numéro_d'AS:AS, dictionnaire nom_des_routeurs:Router et Connector au projet GNS3 local
         sorties : changement de self.available_interfaces
         """
         for link in self.links:
@@ -43,11 +43,23 @@ class Router:
                         self.interface_per_link[link["hostname"]] = LINKS_STANDARD[interface_to_remove]
                 except Exception as exce:
                     print("Error on used interface cleanup", exce)
+    def create_router_if_missing(self, connector:Connector):
+        """
+        Crée le routeur correspondant dans le projet GNS3 donné si il n'existe pas
+
+        input : Connector au projet GNS3 local
+        sorties : changement du projet GNS3
+        """
+        try:
+            connector.get_node(self.hostname)
+        except Exception:
+            print(f"Node {self.hostname} missing ! Creating node...")
+            connector.create_node(self.hostname, "c7200")
     def create_missing_links(self, autonomous_systems:dict[int, AS], all_routers:dict[str, "Router"], connector:Connector):
         """
         Enlève les interfaces déjà utilisées de self.available_interfaces
 
-        self (méthode), dictionnaire numéro_d'AS:AS, dictionnaire nom_des_routeurs:Router et Connector au projet GNS3 local
+        entrées :self (méthode), dictionnaire numéro_d'AS:AS, dictionnaire nom_des_routeurs:Router et Connector au projet GNS3 local
         sorties : changement de self.available_interfaces
         """
         for link in self.links:

@@ -1237,3 +1237,4 @@ env/lib/python3.12/site-packages/pydantic-1.9.2.dist-info/WHEEL
 .idea
 *.log
 .run
+code/__pycache__/parser.cpython-313.pyc
