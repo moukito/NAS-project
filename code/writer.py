@@ -15,9 +15,6 @@ route-map tag_pref_customer permit 10
  set local-preference 300
 """
 
-def get_loopback_config_string(AS, router):
-    loopback_config_string = f"ipv6 route {router.loopback_interface}"
-
 def get_ospf_config_string(AS, router):
     """
     Fonction qui génère la configuration OSPF d'un routeur avec son AS
@@ -26,9 +23,9 @@ def get_ospf_config_string(AS, router):
     sortie : str contenant la configuration correspondante
     """
     ospf_config_string = f"ipv6 router ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT}\n"
-    ospf_config_string += f" router-id {router.router_id}\n"
+    ospf_config_string += f" router-id {router.router_id}.{router.router_id}.{router.router_id}.{router.router_id}\n"
     for passive in router.passive_interfaces:
-        ospf_config_string += f"passive-interface {passive}\n"
+        ospf_config_string += f" passive-interface {passive}\n"
     return ospf_config_string
 
 def get_rip_config_string(AS, router):
@@ -40,7 +37,7 @@ def get_rip_config_string(AS, router):
     """
     rip_config_string = f"ipv6 router rip {NOM_PROCESSUS_IGP_PAR_DEFAUT}\n"
     for passive in router.passive_interfaces:
-        rip_config_string += f"passive-interface {passive}\n"
+        rip_config_string += f" passive-interface {passive}\n"
     return rip_config_string
 
 def get_final_config_string(AS:AS, router:Router):
@@ -55,18 +52,20 @@ def get_final_config_string(AS:AS, router:Router):
     else:
         internal_routing = get_rip_config_string(AS, router)
     total_interface_string = ""
+    total_loopback_interface_string = ""
     for config_string in router.config_str_per_link.values():
         total_interface_string += config_string
     for loopback_config_string in router.loopback_config_str_per_link.values():
         total_loopback_interface_string += loopback_config_string
     config = f"""!
-
 !
-! Last configuration change at 16:10:58 UTC Wed Dec 11 2024
 !
-version 15.2
+!
+!
+!
 service timestamps debug datetime msec
 service timestamps log datetime msec
+no service password-encryption
 !
 hostname {router.hostname}
 !
@@ -100,6 +99,7 @@ multilink bundle-name authenticated
 !
 !
 ip tcp synwait-time 5
+no cdp log mismatch duplex
 ! 
 !
 !
@@ -116,7 +116,6 @@ ip tcp synwait-time 5
 {total_loopback_interface_string}
 
 {total_interface_string}
-
 {router.config_bgp}
 !
 ip forward-protocol nd
@@ -125,7 +124,7 @@ ip forward-protocol nd
 no ip http server
 no ip http secure-server
 !
-
+!
 {internal_routing}
 !
 {LOCAL_PREF_ROUTE_MAPS}
@@ -151,12 +150,3 @@ line vty 0 4
 end
 """
     return config
-
-
-
-"""
-(a faire)
-ipv6 route 2001:DB8:1::1/128 2001:2:1:1::1
-ipv6 router rip RIPNG
- redistribute connected
- """

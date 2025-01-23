@@ -1,3 +1,4 @@
+import os
 import telnetlib
 
 import gns3fy
@@ -22,9 +23,14 @@ class Connector:
     :type active_node: str | None
     """
 
-    def __init__(self, project_name: str, server: str = "http://localhost:3080") -> None:
+    def __init__(self, project_name: str = None, server: str = "http://localhost:3080") -> None:
         # Initialize the Gns3 server connection and project
         self.server = gns3fy.Gns3Connector(server)
+        if project_name is None:
+            for project in self.server.get_projects():
+                if project["status"] == "opened":
+                    project_name = project["name"]
+                    break
         self.project = gns3fy.Project(project_name, connector=self.server)
         self.project.get()  # Load project details
         self.telnet_session = None  # Placeholder for Telnet session
@@ -41,7 +47,20 @@ class Connector:
         # Find the specified node in the project nodes list
         node = next((n for n in self.project.nodes if n.name == node_name), None)
         if node:
-            return node.node_directory  # Return the node's directory
+            path = os.path.join(node.node_directory, "configs")
+            # Check if the config path exists
+            if not os.path.isdir(path):
+                raise FileNotFoundError(f"The configs directory does not exist at {path}")
+
+            # Search for the file containing 'startup-config'
+            for root, _, files in os.walk(path):
+                for file in files:
+                    if "startup-config.cfg" in file:
+                        # Return the full file path if found
+                        return os.path.join(root, file)  # Return the node's directory
+
+            # Raise an exception if no matching file is found
+            raise FileNotFoundError(f"No startup-config file found in {path}")
         else:
             raise ValueError(f"Node {node_name} not found in the project.")  # Raise error if node not found
 
@@ -89,26 +108,28 @@ class Connector:
             raise RuntimeError("No active Telnet connection. Please establish a connection using telnet_connection().")
 
         try:
-            for command in commands:
-                self.telnet_session.read_very_eager()  # Clear any unread output
+            with open("command_output.log", "a") as log_file:  # Open a log file in append mode
+                for command in commands:
+                    self.telnet_session.read_very_eager()  # Clear any unread output
 
-                print(f"Sending command: {command}")
-                self.telnet_session.write(command.encode('ascii') + b"\r\n")  # Send the command
+                    print(f"Sending command: {command}")
+                    self.telnet_session.write(command.encode('ascii') + b"\r\n")  # Send the command
 
-                output = b""  # Aggregate command output
+                    output = b""  # Aggregate command output
 
-                # Read output until prompt is back
-                chunk = self.telnet_session.read_until(f"{self.active_node}#".encode('ascii'), timeout=2)
-                output += chunk
-
-                while b"--More--" in chunk:  # Handle "More" prompts in output
-                    self.telnet_session.write(b" ")  # Send space for "More"
-                    chunk = self.telnet_session.read_until(b"--More--", timeout=2)
+                    # Read output until prompt is back
+                    chunk = self.telnet_session.read_until(f"{self.active_node}#".encode('ascii'), timeout=2)
                     output += chunk
 
-                # Decode output and clean it from command and prompt
-                decoded_output = output.decode('ascii').replace(f"{self.active_node}#", "").replace(command, "").strip()
-                print(decoded_output)  # Print output of the command
+                    while b"--More--" in chunk:  # Handle "More" prompts in output
+                        self.telnet_session.write(b" ")  # Send space for "More"
+                        chunk = self.telnet_session.read_until(b"--More--", timeout=2)
+                        output += chunk
+
+                    # Decode output and clean it from command and prompt
+                    decoded_output = output.decode('ascii').replace(f"{self.active_node}#", "").replace(command,
+                                                                                                        "").strip()
+                    log_file.write(f"Command: {command}\n{decoded_output}\n\n")  # Write to log file
         except Exception as e:
             # Catch and raise errors during command execution
             raise RuntimeError(f"Failed to send commands to {self.active_node}: {e}")
@@ -152,6 +173,20 @@ class Connector:
             return node # Return the node's directory
         else:
             raise ValueError(f"Node {node_name} not found in the project.")  # Raise error if node not found
+    def create_node(self, node_name:str, template:str):
+        """
+        Creates a node with the given name and template in the project
+        
+        input : node_name, the name of the node (equivalent to the hostname for a router !) and the template name (for example, "c7200" for the routers we use)
+        output : creates the node in the GNS project, will raise an error if the node already exists
+        """
+        node = gns3fy.Node(
+            project_id=self.project.project_id,
+            connector=self.server,
+            name=node_name,
+            template=template
+        )
+        node.create()
     def get_used_interface_for_link(self, r1:str, r2:str):
         """
         Returns the interface used for a link FROM r1 TO r2 (must be used the other way to get both ways)
@@ -172,18 +207,69 @@ class Connector:
                 if node["node_id"] == node_2.node_id:
                     found += 1
             if found == 2:
-                interface = link.nodes[i]["adapter_number"]
+                interface = link.nodes[node_1_index]["adapter_number"]
         if interface == None:
             raise KeyError(f"Link between {r1} and {r2} not found in the project.")
         else:
             return interface
+    def create_link_if_it_doesnt_exist(self, r1:str, r2:str, interface_1:int, interface_2:int):
+        """
+        Creates the link between r1 and r2 using the given interface if it doesn't exist
+
+        input : r1 and r2, hostname strings of the 2 routers, interface_1 the index in the standard interfaces of router r1 and interface_2 the same for r2
+        returns : nothing
+        raises : ValueError if the interfaces needed are already either in use
+        """
+        try:
+            node_1 = self.get_node(r1)
+            node_2 = self.get_node(r2)
+            interface_1_real = None
+            interface_2_real = None
+            already_found = False
+            for link in self.project.links:
+                found = 0
+                node_1_index = None
+                node_2_index = None
+                for (i, node) in enumerate(link.nodes):
+                    if node["node_id"] == node_1.node_id:
+                        node_1_index = i
+                        found += 1
+                    if node["node_id"] == node_2.node_id:
+                        node_2_index = i
+                        found += 1
+                if found == 2:
+                    interface_1_real = link.nodes[node_1_index]["adapter_number"]
+                    interface_2_real = link.nodes[node_2_index]["adapter_number"]
+                    already_found = True
+            if interface_1_real == interface_1 or already_found:
+                if interface_2_real == interface_2 or already_found:
+                    pass
+                else:
+                    raise ValueError(f"Interface {interface_1} already in use")
+            else:
+                if interface_2_real == interface_2:
+                    raise ValueError(f"Interface {interface_2} already in use")
+                else:
+                    nodes = [
+                        {"node_id":node_1.node_id, "adapter_number":interface_1, "port_number":0},
+                        {"node_id":node_2.node_id, "adapter_number":interface_2, "port_number":0}
+                    ]
+                    #nodes[0].pop("__pydantic_initialised__")
+                    #nodes[1].pop("__pydantic_initialised__")
+                    link = gns3fy.Link(project_id=self.project.project_id, connector=self.server, nodes=nodes)
+                    link.create()
+
+        except Exception as exce:
+            print("Had an issue creating links : ", exce)
+
+
 if __name__ == "__main__":
-    connector = Connector("projet_TP3_BGP_2")
+    connector = Connector()
     print(f"Project '{connector.project.name}' connection successful.")  # Confirm project connection
     print(f"Project '{connector.project.name}' has {len(connector.project.nodes)} nodes.")  # Node count
     print(f"connector.project.nodes: {connector.project.nodes}")  # Print nodes in the project
     print(f"connector.project.links: {connector.project.links}")
-    print(connector.get_router_config_path("R1") + "\\configs\\i1_startup-config.cfg")  # Config path for node R1
+    print(connector.get_router_config_path("R1"))  # Config path for node R1
     print(f"{connector.get_used_interface_for_link("R1", "R2")}")
 
     # List of commands to execute on the node
@@ -193,4 +279,4 @@ if __name__ == "__main__":
     ]
 
     connector.telnet_connection("R1")  # Open Telnet connection
-    #connector.send_commands_to_node(commands)  # Send commands to the node
+    connector.send_commands_to_node(commands)  # Send commands to the node
