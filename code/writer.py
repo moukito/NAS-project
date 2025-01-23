@@ -1,12 +1,13 @@
 from autonomous_system import AS
 
-LINKS_STANDARD = ["FastEthernet0/0","GigabitEthernet1/0","GigabitEthernet2/0","GigabitEthernet3/0","GigabitEthernet4/0","GigabitEthernet5/0","GigabitEthernet6/0"]
+LINKS_STANDARD = ["FastEthernet0/0", "GigabitEthernet1/0", "GigabitEthernet2/0", "GigabitEthernet3/0",
+                  "GigabitEthernet4/0", "GigabitEthernet5/0", "GigabitEthernet6/0"]
 NOM_PROCESSUS_IGP_PAR_DEFAUT = "1984"
 IPV6_UNICAST_STRING = """no ip domain lookup
 ipv6 unicast-routing
 ipv6 cef
 """
-LOCAL_PREF_ROUTE_MAPS ="""
+LOCAL_PREF_ROUTE_MAPS = """
 route-map tag_pref_provider permit 10
  set local-preference 100
 route-map tag_pref_peer permit 10
@@ -14,6 +15,7 @@ route-map tag_pref_peer permit 10
 route-map tag_pref_customer permit 10
  set local-preference 300
 """
+
 
 def get_ospf_config_string(AS, router):
     """
@@ -28,6 +30,7 @@ def get_ospf_config_string(AS, router):
         ospf_config_string += f" passive-interface {passive}\n"
     return ospf_config_string
 
+
 def get_rip_config_string(AS, router):
     """
     Fonction qui génère la configuration RIP d'un routeur avec son AS
@@ -40,7 +43,8 @@ def get_rip_config_string(AS, router):
         rip_config_string += f" passive-interface {passive}\n"
     return rip_config_string
 
-def get_final_config_string(AS:AS, router:Router):
+
+def get_final_config_string(AS: AS, router: "Router"):
     """
     Génère le string de configuration "final" pour un router, à mettre à la place de sa configuration interne
 
