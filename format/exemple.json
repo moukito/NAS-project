@@ -5,14 +5,16 @@
             "AS_number":111,
             "routers":["R1", "R2", "R5"],
             "internal_routing":"OSPF",
-            "connected_AS":[[110, "peer", {"R1":"2001:200:601::/64", "R2":"2001:200:602::/64"}]]
+            "connected_AS":[[110, "peer", {"R1":"2001:200:601::/64", "R2":"2001:200:602::/64"}]],
+            "loopback_prefix":"2001:200:500::/128"
         },
         {
             "ipv6_prefix":"2001:200:700::/64",
             "AS_number":110,
             "routers":["R4", "R3"],
             "internal_routing":"RIP",
-            "connected_AS":[[111, "peer", {"R3":"2001:200:601::/64", "R4":"2001:200:602::/64"}]]
+            "connected_AS":[[111, "peer", {"R3":"2001:200:601::/64", "R4":"2001:200:602::/64"}]],
+            "loopback_prefix":"2001:200:700::/128"
         }
     ],
     "Les_routeurs":[

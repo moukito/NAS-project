@@ -40,7 +40,7 @@ def get_rip_config_string(AS, router):
         rip_config_string += f" passive-interface {passive}\n"
     return rip_config_string
 
-def get_final_config_string(AS:AS, router:"Router"):
+def get_final_config_string(AS:AS, router:Router):
     """
     Génère le string de configuration "final" pour un router, à mettre à la place de sa configuration interne
 
@@ -52,8 +52,11 @@ def get_final_config_string(AS:AS, router:"Router"):
     else:
         internal_routing = get_rip_config_string(AS, router)
     total_interface_string = ""
+    total_loopback_interface_string = ""
     for config_string in router.config_str_per_link.values():
         total_interface_string += config_string
+    for loopback_config_string in router.loopback_config_str_per_link.values():
+        total_loopback_interface_string += loopback_config_string
     config = f"""!
 !
 !
@@ -109,6 +112,9 @@ no cdp log mismatch duplex
 !
 !
 !
+
+{total_loopback_interface_string}
+
 {total_interface_string}
 {router.config_bgp}
 !
