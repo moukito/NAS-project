@@ -23,6 +23,7 @@ def main():
         router.cleanup_used_interfaces(as_dico, router_dico, connector)
         router.set_interface_configuration_data(as_dico, router_dico)
     for router in les_routers:
+        router.set_loopback_configuration_data(as_dico, router_dico)
         router.create_missing_links(as_dico, router_dico, connector)
     for router in les_routers:
         router.set_bgp_config_data(as_dico, router_dico)

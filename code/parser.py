@@ -42,7 +42,7 @@ def parse_intent_file(file_path: str) -> tuple[list[AS], list[Router]]:
             ip = SubNetwork(ipaddress.IPv6Network(autonomous["ipv6_prefix"]), len(routers))
             internal_routing = autonomous["internal_routing"]
             connected_as = autonomous["connected_AS"]
-            loopback_prefix = autonomous["loopback_prefix"]
+            loopback_prefix = SubNetwork(ipaddress.IPv6Network(autonomous["loopback_prefix"]), len(routers))
             les_as.append(AS(ip, as_number, routers, internal_routing, connected_as, loopback_prefix))
         les_routers = []
         for router in data[ROUTER_LIST_NAME]:

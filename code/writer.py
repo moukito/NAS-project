@@ -15,7 +15,7 @@ route-map tag_pref_peer permit 10
 route-map tag_pref_customer permit 10
  set local-preference 300
 """
-
+STANDARD_LOOPBACK_INTERFACE = "Loopback1"
 
 def get_ospf_config_string(AS, router):
     """
@@ -25,7 +25,7 @@ def get_ospf_config_string(AS, router):
     sortie : str contenant la configuration correspondante
     """
     ospf_config_string = f"ipv6 router ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT}\n"
-    ospf_config_string += f" router-id {router.router_id}.{router.router_id}.{router.router_id}.{router.router_id}\n"
+    ospf_config_string += f" router-id {router.router_id}.{router.router_id}.{router.router_id}.{router.router_id}\n network {router.loopback_address}/128 area 0\n"
     for passive in router.passive_interfaces:
         ospf_config_string += f" passive-interface {passive}\n"
     return ospf_config_string
@@ -116,9 +116,16 @@ no cdp log mismatch duplex
 !
 !
 !
-
+!
+interface {STANDARD_LOOPBACK_INTERFACE}
+ no ip address
+ negotiation auto
+ ipv6 enable
+ ipv6 address {router.loopback_address}/128
+ {router.internal_routing_loopback_config}
+!
 {total_loopback_interface_string}
-
+!
 {total_interface_string}
 {router.config_bgp}
 !

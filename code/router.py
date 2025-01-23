@@ -1,7 +1,8 @@
 from GNS3 import Connector
 from autonomous_system import AS
 from ipv6 import SubNetwork
-from writer import LINKS_STANDARD, NOM_PROCESSUS_IGP_PAR_DEFAUT
+from writer import LINKS_STANDARD, NOM_PROCESSUS_IGP_PAR_DEFAUT, STANDARD_LOOPBACK_INTERFACE
+from ipaddress import IPv6Address
 
 
 class Router:
@@ -25,6 +26,8 @@ class Router:
         self.voisins_ibgp = set()
         self.available_interfaces = [LINKS_STANDARD[i] for i in range(len(LINKS_STANDARD))]
         self.config_bgp = "!"
+        self.loopback_address = IPv6Address("0::")
+        self.internal_routing_loopback_config = ""
 
     def __str__(self):
         return f"hostname:{self.hostname}\n links:{self.links}\n as_number:{self.AS_number}"
@@ -158,6 +161,9 @@ class Router:
 
     def set_loopback_configuration_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
         my_as = autonomous_systems[self.AS_number]
+        router_id = my_as.ipv6_prefix.get_next_router_id()
+        self.router_id = router_id
+        """
         for link in self.links:
             loopback_interface_for_link = "Loopback" + str(self.counter_loopback_interfaces)
             if not self.loopback_subnetworks_per_link.get(link["hostname"], False):
@@ -190,6 +196,12 @@ class Router:
                 extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
             self.loopback_config_str_per_link[link[
                 "hostname"]] = f"interface {loopback_interface_for_link}\n no ip address\n ipv6 address {str(ip_address)}\n {extra_config}"
+        """
+        self.loopback_address = my_as.loopback_prefix.get_ip_address_with_router_id(router_id)
+        if my_as.internal_routing == "OSPF":
+            self.internal_routing_loopback_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
+        elif my_as.internal_routing == "RIP":
+            self.internal_routing_loopback_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
 
     def set_bgp_config_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
         """
@@ -199,8 +211,7 @@ class Router:
         sorties : changement de plusieurs attributs de l'objet, mais surtout de config_bgp qui contient le string de configuration à la fin de l'exécution de la fonction
         """
         my_as = autonomous_systems[self.AS_number]
-        router_id = my_as.ipv6_prefix.get_next_router_id()
-        self.router_id = router_id
+        
         self.voisins_ibgp = my_as.hashset_routers.difference({self.hostname})
         for link in self.links:
             if all_routers[link["hostname"]].AS_number != self.AS_number:
@@ -208,19 +219,19 @@ class Router:
         config_address_family = ""
         config_neighbors_ibgp = ""
         for voisin_ibgp in self.voisins_ibgp:
-            remote_ip = list(all_routers[voisin_ibgp].ip_per_link.values())[0]
-            config_neighbors_ibgp += f"neighbor {remote_ip} remote-as {self.AS_number}\n"
+            remote_ip = all_routers[voisin_ibgp].loopback_address
+            config_neighbors_ibgp += f"  neighbor {remote_ip} remote-as {self.AS_number}\n  neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n"
             config_address_family += f"  neighbor {remote_ip} activate\n"
-        for voisin_ibgp_loopback in self.voisins_ibgp:
-            print(all_routers[voisin_ibgp_loopback].loopback_ip_per_link)
-            remote_loopback_ip = list(all_routers[voisin_ibgp_loopback].loopback_ip_per_link.values())[0]
-            config_neighbors_ibgp += f"neighbor {remote_loopback_ip} remote-as {self.AS_number}\nneighbor {remote_loopback_ip} source-update {list(all_routers[voisin_ibgp_loopback].interface_per_link.values())[0]}"
-            config_address_family += f"  neighbor {remote_loopback_ip} activate\n"
+        #for voisin_ibgp_loopback in self.voisins_ibgp:
+        #    print(all_routers[voisin_ibgp_loopback].loopback_ip_per_link)
+        #    remote_loopback_ip = all_routers[voisin_ibgp_loopback].loopback_address
+        #    config_neighbors_ibgp += f"  neighbor {remote_loopback_ip} remote-as {self.AS_number}\n  neighbor {remote_loopback_ip} source-update {STANDARD_LOOPBACK_INTERFACE}\n"
+        #    config_address_family += f"  neighbor {remote_loopback_ip} activate\n"
 
         config_neighbors_ebgp = ""
         for voisin_ebgp in self.voisins_ebgp:
             remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
-            config_neighbors_ebgp += f"neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n"
+            config_neighbors_ebgp += f"  neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n"#  neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n neighbor {remote_ip} ebgp-multihop 2\n"
             relation = my_as.connected_AS_dict[all_routers[voisin_ebgp].AS_number][0]
 
             config_address_family += f"  neighbor {remote_ip} activate\n"
@@ -230,23 +241,22 @@ class Router:
                 config_address_family += f"  neighbor {remote_ip} route-map tag_pref_provider in\n"
             else:
                 config_address_family += f"  neighbor {remote_ip} route-map tag_pref_customer in\n"
-        for voisin_ebgp_loopback in self.voisins_ebgp:
-            remote_ip_loopback = all_routers[voisin_ebgp_loopback].loopback_ip_per_link[self.hostname]
-            config_neighbors_ebgp += f"neighbor {remote_ip_loopback} remote-as {all_routers[voisin_ebgp_loopback].AS_number}\nneighbor {remote_ip_loopback} source-update {all_routers[voisin_ebgp_loopback].loopback_interface_per_link[self.hostname]}"
-            config_address_family += f"  neighbor {remote_ip_loopback} activate\n"
+        #for voisin_ebgp_loopback in self.voisins_ebgp:
+        #    remote_ip_loopback = all_routers[voisin_ebgp_loopback].loopback_address
+        #    config_neighbors_ebgp += f"  neighbor {remote_ip_loopback} remote-as {all_routers[voisin_ebgp_loopback].AS_number}\n  neighbor {remote_ip_loopback} source-update {STANDARD_LOOPBACK_INTERFACE}\n"
+        #    config_address_family += f"  neighbor {remote_ip_loopback} activate\n"
         self.config_bgp = f"""
 router bgp {self.AS_number}
- bgp router-id {router_id}.{router_id}.{router_id}.{router_id}
+ bgp router-id {self.router_id}.{self.router_id}.{self.router_id}.{self.router_id}
  bgp log-neighbor-changes
  no bgp default ipv4-unicast
- {config_neighbors_ibgp}
- {config_neighbors_ebgp}
+{config_neighbors_ibgp}{config_neighbors_ebgp}
  !
  address-family ipv4
  exit-address-family
  !
  address-family ipv6
- {config_address_family}
+{config_address_family}
  exit-address-family
 !
 """
