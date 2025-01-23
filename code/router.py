@@ -41,9 +41,12 @@ class Router:
                     if LINKS_STANDARD[interface_to_remove] in self.available_interfaces:
                         self.available_interfaces.remove(LINKS_STANDARD[interface_to_remove])
                         self.interface_per_link[link["hostname"]] = LINKS_STANDARD[interface_to_remove]
-                except Exception as exce:
-                    print("Error on used interface cleanup", exce)
-    def create_router_if_missing(self, connector:Connector):
+                except KeyError as e:
+                    print(f"Warning: {e}. Skipping this link.")
+                except Exception as e:
+                    print(f"Unexpected error during interface cleanup: {self.hostname}->{link['hostname']}: {e}")
+
+    def create_router_if_missing(self, connector: Connector):
         """
         Crée le routeur correspondant dans le projet GNS3 donné si il n'existe pas
 
