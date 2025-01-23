@@ -159,7 +159,23 @@ class Connector:
             # Warn user and close Telnet connection on object deletion
             print("Automatically closing Telnet connection...")
             self.close_telnet_connection()
-    def get_node(self, node_name:str) -> dict:
+
+    @staticmethod
+    def refresh_project(func):
+        """
+        A decorator to call `self.project.get()` after the execution of the decorated function.
+        """
+
+        def wrapper(self, *args, **kwargs):
+            # Execute the original function
+            result = func(self, *args, **kwargs)
+            # Refresh the project state
+            self.project.get()
+            return result
+
+        return wrapper
+
+    def get_node(self, node_name: str) -> dict:
         """
         Returns the node of name node_name 's data, or raises an error if it doesn't exist in the project
 
@@ -170,10 +186,12 @@ class Connector:
         # Find the specified node in the project nodes list
         node = next((n for n in self.project.nodes if n.name == node_name), None)
         if node:
-            return node # Return the node's directory
+            return node  # Return the node's directory
         else:
             raise ValueError(f"Node {node_name} not found in the project.")  # Raise error if node not found
-    def create_node(self, node_name:str, template:str):
+
+    @refresh_project
+    def create_node(self, node_name: str, template: str):
         """
         Creates a node with the given name and template in the project
         
@@ -187,7 +205,8 @@ class Connector:
             template=template
         )
         node.create()
-    def get_used_interface_for_link(self, r1:str, r2:str):
+
+    def get_used_interface_for_link(self, r1: str, r2: str):
         """
         Returns the interface used for a link FROM r1 TO r2 (must be used the other way to get both ways)
 
@@ -212,7 +231,9 @@ class Connector:
             raise KeyError(f"Link between {r1} and {r2} not found in the project.")
         else:
             return interface
-    def create_link_if_it_doesnt_exist(self, r1:str, r2:str, interface_1:int, interface_2:int):
+
+    @refresh_project
+    def create_link_if_it_doesnt_exist(self, r1: str, r2: str, interface_1: int, interface_2: int):
         """
         Creates the link between r1 and r2 using the given interface if it doesn't exist
 
@@ -251,11 +272,11 @@ class Connector:
                     raise ValueError(f"Interface {interface_2} already in use")
                 else:
                     nodes = [
-                        {"node_id":node_1.node_id, "adapter_number":interface_1, "port_number":0},
-                        {"node_id":node_2.node_id, "adapter_number":interface_2, "port_number":0}
+                        {"node_id": node_1.node_id, "adapter_number": interface_1, "port_number": 0},
+                        {"node_id": node_2.node_id, "adapter_number": interface_2, "port_number": 0}
                     ]
-                    #nodes[0].pop("__pydantic_initialised__")
-                    #nodes[1].pop("__pydantic_initialised__")
+                    # nodes[0].pop("__pydantic_initialised__")
+                    # nodes[1].pop("__pydantic_initialised__")
                     link = gns3fy.Link(project_id=self.project.project_id, connector=self.server, nodes=nodes)
                     link.create()
 
