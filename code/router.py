@@ -9,20 +9,26 @@ class Router:
         self.links = links
         self.AS_number = AS_number
         self.passive_interfaces = set()
+        self.loopback_interfaces = set()
+        self.counter_loopback_interfaces = 0
         self.router_id = None
         self.subnetworks_per_link = {}
+        self.loopback_subnetworks_per_link = {}
         self.ip_per_link = {}
+        self.loopback_ip_per_link = {}
         self.interface_per_link = {}
+        self.loopback_interface_per_link = {}
         self.config_str_per_link = {}
+        self.loopback_config_str_per_link = {}
         self.voisins_ebgp = {}
         self.voisins_ibgp = set()
         self.available_interfaces = [LINKS_STANDARD[i] for i in range(len(LINKS_STANDARD))]
         self.config_bgp = ""
     
     def __str__(self):
-        return f"hostname:{self.hostname}\n liens:{self.links}\n as_number:{self.AS_number}"
+        return f"hostname:{self.hostname}\n links:{self.links}\n as_number:{self.AS_number}"
 
-    def cleanup_used_interfaces(self, autonomous_systems:dict[int, AS], all_routers:dict[str, "Router"], connector:Connector):
+    def cleanup_used_interfaces(self, autonomous_systems:dict[int, AS], all_routers:dict[str, Router], connector:Connector):
         """
         Enlève les interfaces déjà utilisées de self.available_interfaces
 
@@ -43,7 +49,7 @@ class Router:
                     print("Error on used interface cleanup", exce)
 
 
-    def set_interface_configuration_data(self, autonomous_systems:dict[int, AS], all_routers:dict[str, "Router"]):
+    def set_interface_configuration_data(self, autonomous_systems:dict[int, AS], all_routers:dict[str, Router]):
         """
         Génère les string de configuration par lien pour le routeur self
 
@@ -75,7 +81,38 @@ class Router:
                 extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
             self.config_str_per_link[link["hostname"]] = f"interface {interface}\n no ip address\n negotiation auto\n ipv6 address {str(ip_address)}\n ipv6 enable\n {extra_config}"
         # print(f"LEN DE FOU : {self.ip_per_link}")
-    def set_bgp_config_data(self, autonomous_systems:dict[int, AS], all_routers:dict[str, "Router"]):
+
+    def set_loopback_configuration_data(self, autonomous_systems:dict[int, AS], all_routers:dict[str, Router]):
+        my_as = autonomous_systems[self.AS_number]
+        for link in self.links:
+            loopback_interface_for_link = "Loopback" + str(interface_loopback)
+            if not self.loopback_subnetworks_per_link.get(link["hostname"], False):
+                if link["hostname"] in my_as.hashset_routers:
+                    self.loopback_subnetworks_per_link[link["hostname"]] = my_as.loopback_prefix.next_subnetwork_with_n_routers(2)
+                    all_routers[link["hostname"]].loopback_subnetworks_per_link[self.hostname] = self.loopback_subnetworks_per_link[link["hostname"]]
+                else:
+                    self.loopback_interfaces.append(loopback_interface_for_link)
+                    self.counter_loopback_interfaces += 1
+                    picked_transport_interface = SubNetwork(my_as.connected_AS_dict[all_routers[link["hostname"]].AS_number][1][self.hostname], 2)
+                    self.loopback_subnetworks_per_link[link["hostname"]] = picked_transport_interface
+                    all_routers[link["hostname"]].loopback_subnetworks_per_link[self.hostname] = picked_transport_interface
+        
+            elif link["hostname"] not in my_as.hashset_routers:
+                self.loopback_interfaces.append(loopback_interface_for_link)
+                self.counter_loopback_interfaces += 1
+            ip_address, interface = self.loopback_subnetworks_per_link[link["hostname"]].get_ip_address_with_router_id(self.loopback_subnetworks_per_link[link["hostname"]].get_next_router_id()), loopback_interface_for_link
+            self.loopback_ip_per_link[link["hostname"]] = ip_address
+            self.loopback_interface_per_link[link["hostname"]] = self.loopback_interface_per_link.get(link["hostname"],interface)
+            extra_config = "\n!\n"
+            if my_as.internal_routing == "OSPF":
+                extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
+            elif my_as.internal_routing == "RIP":
+                extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
+            self.loopback_config_str_per_link[link["hostname"]] = f"interface {interface}\n no ip address\n ipv6 address {str(ip_address)}\n {extra_config}"
+
+        
+
+    def set_bgp_config_data(self, autonomous_systems:dict[int, AS], all_routers:dict[str, Router]):
         """
         Génère le string de configuration bgp du router self
 
@@ -95,20 +132,27 @@ class Router:
             remote_ip = list(all_routers[voisin_ibgp].ip_per_link.values())[0]
             config_neighbors_ibgp += f"neighbor {remote_ip} remote-as {self.AS_number}\n"
             config_address_family += f"neighbor {remote_ip} activate\n"
+        for voisin_ibgp_loopback in self.voisins_ibgp:
+            remote_loopback_ip = list(all_routers[voisin_ibgp_loopback].loopback_ip_per_link.values())[0]
+            config_neighbors_ibgp += f"neighbor {remote_loopback_ip} remote-as {self.AS_number}\nneighbor {remote_loopback_ip} source-update {list(all_routers[voisin_ibgp_loopback].interface_per_link.values())[0]}"
+            config_address_family += f"neighbor {remote_loopback_ip} activate\n"
         config_neighbors_ebgp = ""
         for voisin_ebgp in self.voisins_ebgp:
             remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
             config_neighbors_ebgp += f"neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n"
             relation = my_as.connected_AS_dict[all_routers[voisin_ebgp].AS_number][0]
-            
+
             config_address_family += f"neighbor {remote_ip} activate\n"
             if relation == "peer":
                 config_address_family += f"neighbor {remote_ip} route-map tag_pref_peer in\n"
-            elif relation == "provider":
+            elif relation == "provider": 
                 config_address_family += f"neighbor {remote_ip} route-map tag_pref_provider in\n"
             else:
                 config_address_family += f"neighbor {remote_ip} route-map tag_pref_customer in\n"
-
+        for voisin_ebgp_loopback in self.voisins_ebgp:
+            remote_ip_loopback = all_routers[voisin_ebgp].loopback_ip_per_link[self.hostname]
+            config_neighbors_ebgp += f"neighbor {remote_ip_loopback} remote-as {all_routers[voisin_ebgp_loopback].AS_number}\nneighbor {remote_ip_loopback} source-update {all_routers[voisin_ebgp_loopback].loopback_interface_per_link[self.hostname]}"
+            config_address_family += f"neighbor {remote_ip_loopback} activate\n"
         self.config_bgp = f"""
 router bgp {self.AS_number}
  bgp router-id {router_id}

@@ -15,6 +15,9 @@ route-map tag_pref_customer permit 10
  set local-preference 300
 """
 
+def get_loopback_config_string(AS, router):
+    loopback_config_string = f"ipv6 route {router.loopback_interface}"
+
 def get_ospf_config_string(AS, router):
     """
     Fonction qui génère la configuration OSPF d'un routeur avec son AS
@@ -40,7 +43,7 @@ def get_rip_config_string(AS, router):
         rip_config_string += f"passive-interface {passive}\n"
     return rip_config_string
 
-def get_final_config_string(AS:AS, router:"Router"):
+def get_final_config_string(AS:AS, router:Router):
     """
     Génère le string de configuration "final" pour un router, à mettre à la place de sa configuration interne
 
@@ -54,6 +57,8 @@ def get_final_config_string(AS:AS, router:"Router"):
     total_interface_string = ""
     for config_string in router.config_str_per_link.values():
         total_interface_string += config_string
+    for loopback_config_string in router.loopback_config_str_per_link.values():
+        total_loopback_interface_string += loopback_config_string
     config = f"""!
 
 !
@@ -108,6 +113,8 @@ ip tcp synwait-time 5
 !
 !
 
+{total_loopback_interface_string}
+
 {total_interface_string}
 
 {router.config_bgp}
@@ -144,3 +151,12 @@ line vty 0 4
 end
 """
     return config
+
+
+
+"""
+(a faire)
+ipv6 route 2001:DB8:1::1/128 2001:2:1:1::1
+ipv6 router rip RIPNG
+ redistribute connected
+ """
