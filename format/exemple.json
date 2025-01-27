@@ -1,20 +1,44 @@
 {
     "Les_AS":[
         {
-            "ipv6_prefix":"2001:200:500::/64",
+            "ipv6_prefix":"2001:200:100::/64",
             "AS_number":111,
-            "routers":["R1", "R2", "R5"],
+            "routers":["R1", "R2", "R5", "R6"],
             "internal_routing":"OSPF",
-            "connected_AS":[[110, "peer", {"R1":"2001:200:601::/64", "R2":"2001:200:602::/64"}]],
+            "connected_AS":[[110, "peer", {"R1":"2001:200:201::/64", "R2":"2001:200:202::/64"}], [120, "client", {"R5":"2001:200:401::/64"}], [130, "client", {"R6":"2001:200:601::/64"}]],
+            "loopback_prefix":"2001:200:100::/128"
+        },
+        {
+            "ipv6_prefix":"2001:200:300::/64",
+            "AS_number":110,
+            "routers":["R4", "R3"],
+            "internal_routing":"RIP",
+            "connected_AS":[[111, "peer", {"R3":"2001:200:201::/64", "R4":"2001:200:202::/64"}], [112, "peer", {"R4":"2001:200:801::/64"}]],
+            "loopback_prefix":"2001:200:300::/128"
+        },
+        {
+            "ipv6_prefix":"2001:200:500::/64",
+            "AS_number":120,
+            "routers":["R10", "R11"],
+            "internal_routing":"OSPF",
+            "connected_AS":[[111, "provider", {"R10":"2001:200:401::/64"}]],
             "loopback_prefix":"2001:200:500::/128"
         },
         {
             "ipv6_prefix":"2001:200:700::/64",
-            "AS_number":110,
-            "routers":["R4", "R3"],
-            "internal_routing":"RIP",
-            "connected_AS":[[111, "peer", {"R3":"2001:200:601::/64", "R4":"2001:200:602::/64"}]],
+            "AS_number":130,
+            "routers":["R20", "R21"],
+            "internal_routing":"OSPF",
+            "connected_AS":[[111, "provider", {"R20":"2001:200:601::/64"}]],
             "loopback_prefix":"2001:200:700::/128"
+        },
+        {
+            "ipv6_prefix":"2001:200:900::/64",
+            "AS_number":112,
+            "routers":["R30", "R31"],
+            "internal_routing":"OSPF",
+            "connected_AS":[[110, "peer", {"R30":"2001:200:801::/64"}]],
+            "loopback_prefix":"2001:200:900::/128"
         }
     ],
     "Les_routeurs":[
@@ -30,20 +54,56 @@
         },
         {
             "hostname":"R5",
-            "links":[{"type":"Router", "hostname":"R2"}],
+            "links":[{"type":"Router", "hostname":"R2"}, {"type":"Router", "hostname":"R10"},{"type":"Router", "hostname":"R6"}],
+            "AS_number":111
+        },
+        {
+            "hostname":"R6",
+            "links":[{"type":"Router", "hostname":"R5"}, {"type":"Router", "hostname":"R20"}],
             "AS_number":111
         },
         
         {
             "hostname":"R4",
-            "links":[{"type":"Router", "hostname":"R3"},{"type":"Router", "hostname":"R2"}],
+            "links":[{"type":"Router", "hostname":"R3"},{"type":"Router", "hostname":"R2"},{"type":"Router", "hostname":"R30"}],
             "AS_number":110
         },
         {
             "hostname":"R3",
             "links":[{"type":"Router", "hostname":"R4"}, {"type":"Router", "hostname":"R1"}],
             "AS_number":110
+        },
+        {
+            "hostname":"R10",
+            "links":[{"type":"Router", "hostname":"R11"},{"type":"Router", "hostname":"R5"}],
+            "AS_number":120
+        },
+        {
+            "hostname":"R11",
+            "links":[{"type":"Router", "hostname":"R10"}],
+            "AS_number":120
+        },
+
+        {
+            "hostname":"R20",
+            "links":[{"type":"Router", "hostname":"R21"},{"type":"Router", "hostname":"R6"}],
+            "AS_number":130
+        },
+        {
+            "hostname":"R21",
+            "links":[{"type":"Router", "hostname":"R20"}],
+            "AS_number":130
+        },
+
+        {
+            "hostname":"R30",
+            "links":[{"type":"Router", "hostname":"R31"},{"type":"Router", "hostname":"R4"}],
+            "AS_number":112
+        },
+        {
+            "hostname":"R31",
+            "links":[{"type":"Router", "hostname":"R30"}],
+            "AS_number":112
         }
-    
     ]
 }
