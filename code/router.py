@@ -28,6 +28,9 @@ class Router:
         self.config_bgp = "!"
         self.loopback_address = IPv6Address("0::")
         self.internal_routing_loopback_config = ""
+        self.route_maps = {}
+        self.used_route_maps = set()
+
 
     def __str__(self):
         return f"hostname:{self.hostname}\n links:{self.links}\n as_number:{self.AS_number}"
@@ -153,7 +156,7 @@ class Router:
             extra_config = "\n!\n"
             if my_as.internal_routing == "OSPF":
                 if not link.get("ospf_cost", False):
-                    extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n ipv6 ospf cost 1\n!\n"
+                    extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
                 else:
                     extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n ipv6 ospf cost {link["ospf_cost"]}\n!\n"
             elif my_as.internal_routing == "RIP":
@@ -189,31 +192,18 @@ class Router:
         config_neighbors_ibgp = ""
         for voisin_ibgp in self.voisins_ibgp:
             remote_ip = all_routers[voisin_ibgp].loopback_address
-            config_neighbors_ibgp += f"  neighbor {remote_ip} remote-as {self.AS_number}\n  neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n"
+            config_neighbors_ibgp += f"  neighbor {remote_ip} remote-as {self.AS_number}\n  neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n  neighbor {remote_ip} send-community\n"
             config_address_family += f"  neighbor {remote_ip} activate\n"
-        #for voisin_ibgp_loopback in self.voisins_ibgp:
-        #    print(all_routers[voisin_ibgp_loopback].loopback_ip_per_link)
-        #    remote_loopback_ip = all_routers[voisin_ibgp_loopback].loopback_address
-        #    config_neighbors_ibgp += f"  neighbor {remote_loopback_ip} remote-as {self.AS_number}\n  neighbor {remote_loopback_ip} source-update {STANDARD_LOOPBACK_INTERFACE}\n"
-        #    config_address_family += f"  neighbor {remote_loopback_ip} activate\n"
-
         config_neighbors_ebgp = ""
         for voisin_ebgp in self.voisins_ebgp:
             remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
-            config_neighbors_ebgp += f"  neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n"#  neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n neighbor {remote_ip} ebgp-multihop 2\n"
-            relation = my_as.connected_AS_dict[all_routers[voisin_ebgp].AS_number][0]
+            remote_as = all_routers[voisin_ebgp].AS_number
+            config_neighbors_ebgp += f"  neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n  neighbor {remote_ip} send-community\n"#  neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n neighbor {remote_ip} ebgp-multihop 2\n"
+            config_address_family += f"  neighbor {remote_ip} activate\n  neighbor {remote_ip} route-map {my_as.community_data[remote_as]["route_map_in_bgp_name"]} in\n"
+            if my_as.connected_AS_dict[remote_as][0] != "client":
+                config_address_family += f"  neighbor {remote_ip} route-map General-OUT out\n"
+            self.used_route_maps.add(remote_as)
 
-            config_address_family += f"  neighbor {remote_ip} activate\n"
-            if relation == "peer":
-                config_address_family += f"  neighbor {remote_ip} route-map tag_pref_peer in\n"
-            elif relation == "provider":
-                config_address_family += f"  neighbor {remote_ip} route-map tag_pref_provider in\n"
-            else:
-                config_address_family += f"  neighbor {remote_ip} route-map tag_pref_customer in\n"
-        #for voisin_ebgp_loopback in self.voisins_ebgp:
-        #    remote_ip_loopback = all_routers[voisin_ebgp_loopback].loopback_address
-        #    config_neighbors_ebgp += f"  neighbor {remote_ip_loopback} remote-as {all_routers[voisin_ebgp_loopback].AS_number}\n  neighbor {remote_ip_loopback} source-update {STANDARD_LOOPBACK_INTERFACE}\n"
-        #    config_address_family += f"  neighbor {remote_ip_loopback} activate\n"
         self.config_bgp = f"""
 router bgp {self.AS_number}
  bgp router-id {self.router_id}.{self.router_id}.{self.router_id}.{self.router_id}

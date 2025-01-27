@@ -58,6 +58,11 @@ def get_final_config_string(AS: AS, router: "Router"):
     total_interface_string = ""
     for config_string in router.config_str_per_link.values():
         total_interface_string += config_string
+    route_maps = ""
+    community_lists = AS.full_community_lists
+    for autonomous in router.used_route_maps:
+        route_maps += AS.community_data[autonomous]["route_map_in"]
+    route_maps += AS.global_route_map_out
     config = f"""!
 !
 !
@@ -104,7 +109,7 @@ no cdp log mismatch duplex
 ! 
 !
 !
-!
+ip bgp-community new-format
 !
 !
 !
@@ -134,7 +139,9 @@ no ip http secure-server
 !
 {internal_routing}
 !
-{LOCAL_PREF_ROUTE_MAPS}
+{community_lists}
+!
+{route_maps}
 !
 !
 control-plane
