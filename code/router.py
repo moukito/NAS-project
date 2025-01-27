@@ -156,7 +156,10 @@ class Router:
             # print(self.interface_per_link.get(link["hostname"],interface))
             extra_config = "\n!\n"
             if my_as.internal_routing == "OSPF":
-                extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
+                if not link.get("ospf_cost", False):
+                    extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
+                else:
+                    extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n ipv6 ospf cost {link["ospf_cost"]}\n!\n"
             elif my_as.internal_routing == "RIP":
                 extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
             self.config_str_per_link[link[

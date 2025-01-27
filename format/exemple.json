@@ -44,12 +44,12 @@
     "Les_routeurs":[
         {
             "hostname":"R1",
-            "links":[{"type":"Router", "hostname":"R2"}, {"type":"Router", "hostname":"R3", "interface":"GigabitEthernet3/0"}],
+            "links":[{"type":"Router", "hostname":"R2"}, {"type":"Router", "hostname":"R3", "interface":"GigabitEthernet3/0", "ospf_cost": 10}],
             "AS_number":111
         },
         {
             "hostname":"R2",
-            "links":[{"type":"Router", "hostname":"R1"},{"type":"Router", "hostname":"R4"},{"type":"Router", "hostname":"R5"}],
+            "links":[{"type":"Router", "hostname":"R1", "ospf_cost": 15},{"type":"Router", "hostname":"R4"},{"type":"Router", "hostname":"R5"}],
             "AS_number":111
         },
         {
