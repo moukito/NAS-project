@@ -152,7 +152,10 @@ class Router:
             # print(self.interface_per_link.get(link["hostname"],interface))
             extra_config = "\n!\n"
             if my_as.internal_routing == "OSPF":
-                extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
+                if not link.get("ospf_cost", False):
+                    extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n ipv6 ospf cost 1\n!\n"
+                else:
+                    extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n ipv6 ospf cost {link["ospf_cost"]}\n!\n"
             elif my_as.internal_routing == "RIP":
                 extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
             self.config_str_per_link[link[
@@ -163,40 +166,6 @@ class Router:
         my_as = autonomous_systems[self.AS_number]
         router_id = my_as.ipv6_prefix.get_next_router_id()
         self.router_id = router_id
-        """
-        for link in self.links:
-            loopback_interface_for_link = "Loopback" + str(self.counter_loopback_interfaces)
-            if not self.loopback_subnetworks_per_link.get(link["hostname"], False):
-                if link["hostname"] in my_as.hashset_routers:
-                    self.loopback_subnetworks_per_link[
-                        link["hostname"]] = my_as.loopback_prefix.next_subnetwork_with_n_routers(2)
-                    all_routers[link["hostname"]].loopback_subnetworks_per_link[self.hostname] = \
-                        self.loopback_subnetworks_per_link[link["hostname"]]
-                else:
-                    self.loopback_interfaces.add(loopback_interface_for_link)
-                    self.counter_loopback_interfaces += 1
-                    picked_transport_interface = SubNetwork(
-                        my_as.connected_AS_dict[all_routers[link["hostname"]].AS_number][1][self.hostname], 2)
-                    self.loopback_subnetworks_per_link[link["hostname"]] = picked_transport_interface
-                    all_routers[link["hostname"]].loopback_subnetworks_per_link[
-                        self.hostname] = picked_transport_interface
-
-            elif link["hostname"] not in my_as.hashset_routers:
-                self.loopback_interfaces.add(loopback_interface_for_link)
-                self.counter_loopback_interfaces += 1
-            ip_address = self.loopback_subnetworks_per_link[link["hostname"]].get_ip_address_with_router_id(
-                self.loopback_subnetworks_per_link[link["hostname"]].get_next_router_id())
-            self.loopback_ip_per_link[link["hostname"]] = ip_address
-            self.loopback_interface_per_link[link["hostname"]] = self.loopback_interface_per_link.get(link["hostname"],
-                                                                                                      loopback_interface_for_link)
-            extra_config = "\n!\n"
-            if my_as.internal_routing == "OSPF":
-                extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
-            elif my_as.internal_routing == "RIP":
-                extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
-            self.loopback_config_str_per_link[link[
-                "hostname"]] = f"interface {loopback_interface_for_link}\n no ip address\n ipv6 address {str(ip_address)}\n {extra_config}"
-        """
         self.loopback_address = my_as.loopback_prefix.get_ip_address_with_router_id(router_id)
         if my_as.internal_routing == "OSPF":
             self.internal_routing_loopback_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"

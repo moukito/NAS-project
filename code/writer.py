@@ -56,11 +56,8 @@ def get_final_config_string(AS: AS, router: "Router"):
     else:
         internal_routing = get_rip_config_string(AS, router)
     total_interface_string = ""
-    total_loopback_interface_string = ""
     for config_string in router.config_str_per_link.values():
         total_interface_string += config_string
-    for loopback_config_string in router.loopback_config_str_per_link.values():
-        total_loopback_interface_string += loopback_config_string
     config = f"""!
 !
 !
@@ -124,7 +121,6 @@ interface {STANDARD_LOOPBACK_INTERFACE}
  ipv6 address {router.loopback_address}/128
  {router.internal_routing_loopback_config}
 !
-{total_loopback_interface_string}
 !
 {total_interface_string}
 {router.config_bgp}
