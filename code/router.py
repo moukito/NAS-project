@@ -120,7 +120,8 @@ class Router:
                 else:
                     raise KeyError("Le routeur cible n'a pas de lien dans l'autre sens")
 
-    def set_interface_configuration_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
+    def set_interface_configuration_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"],
+                                         mode: str):
         """
         Génère les string de configuration par lien pour le routeur self
 
@@ -155,29 +156,42 @@ class Router:
                 self.subnetworks_per_link[link["hostname"]].get_next_router_id())
             self.ip_per_link[link["hostname"]] = ip_address
             # print(self.interface_per_link.get(link["hostname"],interface))
-            extra_config = "\n!\n"
-            if my_as.internal_routing == "OSPF":
-                if not link.get("ospf_cost", False):
-                    extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
-                else:
-                    extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n ipv6 ospf cost {link["ospf_cost"]}\n!\n"
-            elif my_as.internal_routing == "RIP":
-                extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
-            self.config_str_per_link[link[
-                "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no ip address\n negotiation auto\n ipv6 address {str(ip_address)}/{self.subnetworks_per_link[link["hostname"]].start_of_free_spots * 16}\n ipv6 enable\n {extra_config}"
+            if mode == "cfg":
+                extra_config = "\n!\n"
+                if my_as.internal_routing == "OSPF":
+                    if not link.get("ospf_cost", False):
+                        extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
+                    else:
+                        extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n ipv6 ospf cost {link["ospf_cost"]}\n!\n"
+                elif my_as.internal_routing == "RIP":
+                    extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
+                self.config_str_per_link[link[
+                    "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no ip address\n negotiation auto\n ipv6 address {str(ip_address)}/{self.subnetworks_per_link[link["hostname"]].start_of_free_spots * 16}\n ipv6 enable\n {extra_config}"
+            elif mode == "telnet":
+                # todo : send commands
+                self.config_str_per_link[link["hostname"]] = ""
         # print(f"LEN DE FOU : {self.ip_per_link}")
 
-    def set_loopback_configuration_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
+    def set_loopback_configuration_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"],
+                                        mode: str):
         my_as = autonomous_systems[self.AS_number]
         router_id = my_as.global_router_counter.get_next_router_id()
         self.router_id = router_id
         self.loopback_address = my_as.loopback_prefix.get_ip_address_with_router_id(router_id)
         if my_as.internal_routing == "OSPF":
-            self.internal_routing_loopback_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
+            if mode == "cfg":
+                self.internal_routing_loopback_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
+            elif mode == "telnet":
+                # todo : telnet command
+                self.internal_routing_loopback_config = ""
         elif my_as.internal_routing == "RIP":
-            self.internal_routing_loopback_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
+            if mode == "cfg":
+                self.internal_routing_loopback_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
+            elif mode == "telnet":
+                # todo : telnet command
+                self.internal_routing_loopback_config = ""
 
-    def set_bgp_config_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
+    def set_bgp_config_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"], mode: str):
         """
         Génère le string de configuration bgp du router self
 
@@ -190,23 +204,28 @@ class Router:
         for link in self.links:
             if all_routers[link["hostname"]].AS_number != self.AS_number:
                 self.voisins_ebgp[link["hostname"]] = all_routers[link["hostname"]].AS_number
-        config_address_family = ""
-        config_neighbors_ibgp = ""
-        for voisin_ibgp in self.voisins_ibgp:
-            remote_ip = all_routers[voisin_ibgp].loopback_address
-            config_neighbors_ibgp += f"  neighbor {remote_ip} remote-as {self.AS_number}\n  neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n"
-            config_address_family += f"  neighbor {remote_ip} activate\n  neighbor {remote_ip} send-community\n"
-        config_neighbors_ebgp = ""
-        for voisin_ebgp in self.voisins_ebgp:
-            remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
-            remote_as = all_routers[voisin_ebgp].AS_number
-            config_neighbors_ebgp += f"  neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n"#  neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n neighbor {remote_ip} ebgp-multihop 2\n"
-            config_address_family += f"  neighbor {remote_ip} activate\n  neighbor {remote_ip} send-community\n  neighbor {remote_ip} route-map {my_as.community_data[remote_as]["route_map_in_bgp_name"]} in\n"
-            if my_as.connected_AS_dict[remote_as][0] != "client":
-                config_address_family += f"  neighbor {remote_ip} route-map General-OUT out\n"
-            self.used_route_maps.add(remote_as)
+        if mode == "telnet":
+            # todo : telnet commands
+            self.used_route_maps.add()
+            self.config_bgp = ""
+        elif mode == "cfg":
+            config_address_family = ""
+            config_neighbors_ibgp = ""
+            for voisin_ibgp in self.voisins_ibgp:
+                remote_ip = all_routers[voisin_ibgp].loopback_address
+                config_neighbors_ibgp += f"  neighbor {remote_ip} remote-as {self.AS_number}\n  neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n"
+                config_address_family += f"  neighbor {remote_ip} activate\n  neighbor {remote_ip} send-community\n"
+            config_neighbors_ebgp = ""
+            for voisin_ebgp in self.voisins_ebgp:
+                remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
+                remote_as = all_routers[voisin_ebgp].AS_number
+                config_neighbors_ebgp += f"  neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n"  # neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n neighbor {remote_ip} ebgp-multihop 2\n"
+                config_address_family += f"  neighbor {remote_ip} activate\n  neighbor {remote_ip} send-community\n  neighbor {remote_ip} route-map {my_as.community_data[remote_as]["route_map_in_bgp_name"]} in\n"
+                if my_as.connected_AS_dict[remote_as][0] != "client":
+                    config_address_family += f"  neighbor {remote_ip} route-map General-OUT out\n"
+                self.used_route_maps.add(remote_as)
 
-        self.config_bgp = f"""
+            self.config_bgp = f"""
 router bgp {self.AS_number}
  bgp router-id {self.router_id}.{self.router_id}.{self.router_id}.{self.router_id}
  bgp log-neighbor-changes

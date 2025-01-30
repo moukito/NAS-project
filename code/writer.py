@@ -45,26 +45,29 @@ def get_rip_config_string(AS, router):
     return rip_config_string
 
 
-def get_final_config_string(AS: AS, router: "Router"):
-    """
-    Génère le string de configuration "final" pour un router, à mettre à la place de sa configuration interne
+def get_final_config_string(AS: AS, router: "Router", mode: str):
+	"""
+	Génère le string de configuration "final" pour un router, à mettre à la place de sa configuration interne
 
-    entrées : AS: Autonomous System et router un Router
-    sortie : str contenant la configuration correspondante (bien complète, pas besoin de parsing ou de manipulation de string en +)
-    """
-    if AS.internal_routing == "OSPF":
-        internal_routing = get_ospf_config_string(AS, router)
-    else:
-        internal_routing = get_rip_config_string(AS, router)
-    total_interface_string = ""
-    for config_string in router.config_str_per_link.values():
-        total_interface_string += config_string
-    route_maps = ""
-    community_lists = AS.full_community_lists
-    for autonomous in router.used_route_maps:
-        route_maps += AS.community_data[autonomous]["route_map_in"]
-    route_maps += AS.global_route_map_out
-    config = f"""!
+	entrées : AS: Autonomous System et router un Router
+	sortie : str contenant la configuration correspondante (bien complète, pas besoin de parsing ou de manipulation de string en +)
+	"""
+	if mode == "telnet":
+		# todo : telnet command
+		return ""
+	if AS.internal_routing == "OSPF":
+		internal_routing = get_ospf_config_string(AS, router)
+	else:
+		internal_routing = get_rip_config_string(AS, router)
+	total_interface_string = ""
+	for config_string in router.config_str_per_link.values():
+		total_interface_string += config_string
+	route_maps = ""
+	community_lists = AS.full_community_lists
+	for autonomous in router.used_route_maps:
+		route_maps += AS.community_data[autonomous]["route_map_in"]
+	route_maps += AS.global_route_map_out
+	config = f"""!
 !
 !
 !
