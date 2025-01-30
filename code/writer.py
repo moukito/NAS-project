@@ -189,7 +189,7 @@ def get_all_telnet_commands(AS:AS, router:"Router"):
 	interface_configs = []
 	for interface in router.config_str_per_link.values():
 		interface_configs += interface.split("\n")
-	final = (["config t", "ip bgp-community new-format", "ipv6 unicast-routing"] + community_list_setup + route_maps_setup + internal_routing + loopback_setup + interface_configs + bgp_setup)
+	final = (["\n", "\n", "\n","config t", "ip bgp-community new-format", "ipv6 unicast-routing"] + community_list_setup + route_maps_setup + internal_routing + loopback_setup + interface_configs + bgp_setup)
 	for commande in list(final):
 		if "!" in commande:
 			final.remove(commande)
