@@ -49,8 +49,8 @@ def get_final_config_string(AS: AS, router: "Router", mode: str):
 	"""
 	Génère le string de configuration "final" pour un router, à mettre à la place de sa configuration interne
 
-	entrées : AS: Autonomous System et router un Router
-	sortie : str contenant la configuration correspondante (bien complète, pas besoin de parsing ou de manipulation de string en +)
+	entrées : AS: Autonomous System et router un Router, ainsi que mode indiquant si on est en "cfg" ou "telnet"
+	sortie : str contenant la configuration correspondante (bien complète, pas besoin de parsing ou de manipulation de string en +) OU liste de str de commandes si mode == "telnet"
 	"""
 	if mode == "telnet":
 		# todo : telnet command
@@ -170,6 +170,12 @@ end
 
 
 def get_all_telnet_commands(AS:AS, router:"Router"):
+	"""
+	Génère et renvoie une liste de commandes telnet à partir d'un AS et d'un routeur que l'on SUPPOSE avoir été configuré en mode "telnet"
+	
+	entrées : AS: Autonomous System et router un Router
+	sortie : liste de str de commandes telnet à exécuter telles quelles sur une session telnet ouverte du routeur correspondant dans le projet GNS3 voulu
+	"""
 	community_list_setup = AS.full_community_lists.split("\n")
 	liste_raw = AS.global_route_map_out.split("\n")
 	if len(liste_raw) > 3:

@@ -183,6 +183,13 @@ class Router:
 
     def set_loopback_configuration_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"],
                                         mode: str):
+        """
+        génère la configuration de loopback unique au routeur ou les commandes de l'interface de loopback du routeur en fonction du mode
+
+        entrées: self (méthode), dictionnaire numéro_d'AS:AS, dictionnaire nom_des_routeurs:Router et mode un str valant "cfg" ou "telnet"
+        sorties : modifie self.router_id, self.loopback_address
+        
+        """
         my_as = autonomous_systems[self.AS_number]
         router_id = my_as.global_router_counter.get_next_router_id()
         self.router_id = router_id
