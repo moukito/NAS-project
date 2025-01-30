@@ -198,7 +198,7 @@ class Router:
                 self.internal_routing_loopback_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
             elif mode == "telnet":
                 # todo : telnet command
-                self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\nno ip address\nipv6 enable\nipv6 address {self.loopback_address}/128\nipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\nexit\n"
+                self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\nno ip address\nipv6 enable\nipv6 address {self.loopback_address}/128\nipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
 
     def set_bgp_config_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"], mode: str):
         """

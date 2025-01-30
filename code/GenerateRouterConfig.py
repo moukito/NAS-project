@@ -23,12 +23,10 @@ def apply_router_configuration(connector, router, config_data, mode):
 			print(f"Error processing {router.hostname}: {e}")
 	elif mode == 'telnet':
 		print(config_data)
-		return
 		# Send configuration using telnet
 		try:
 			connector.telnet_connection(router.hostname)
-			commands = config_data.splitlines()  # Split configuration into individual commands
-			connector.send_commands_to_node(commands)  # Send commands to the router
+			connector.send_commands_to_node(config_data)  # Send commands to the router
 			connector.close_telnet_connection()
 			print(f"Configuration for {router.hostname} applied via Telnet.")
 		except (RuntimeError, ConnectionError) as e:
