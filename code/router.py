@@ -224,7 +224,7 @@ class Router:
                 if my_as.connected_AS_dict[remote_as][0] != "client":
                     config_address_family += f"  neighbor {remote_ip} route-map General-OUT out\n"
                 self.used_route_maps.add(remote_as)
-
+            config_address_family += f"  network {self.loopback_address}/128\n"
             self.config_bgp = f"""
 router bgp {self.AS_number}
  bgp router-id {self.router_id}.{self.router_id}.{self.router_id}.{self.router_id}

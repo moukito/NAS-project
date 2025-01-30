@@ -67,7 +67,7 @@ def get_final_config_string(AS: AS, router: "Router", mode: str):
 	for autonomous in router.used_route_maps:
 		route_maps += AS.community_data[autonomous]["route_map_in"]
 	route_maps += AS.global_route_map_out
-	config = f"""!
+	return f"""!
 !
 !
 !
@@ -167,4 +167,3 @@ line vty 0 4
 !
 end
 """
-    return config
