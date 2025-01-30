@@ -6,7 +6,7 @@ from ipaddress import IPv6Address
 
 
 class Router:
-    def __init__(self, hostname: str, links, AS_number: int):
+    def __init__(self, hostname: str, links, AS_number: int, position=None):
         self.hostname = hostname
         self.links = links
         self.AS_number = AS_number
@@ -26,6 +26,7 @@ class Router:
         self.voisins_ibgp = set()
         self.available_interfaces = [LINKS_STANDARD[i] for i in range(len(LINKS_STANDARD))]
         self.config_bgp = "!"
+        self.position = position if position else {"x": 0, "y": 0}
         self.loopback_address = IPv6Address("0::")
         self.internal_routing_loopback_config = ""
         self.route_maps = {}
@@ -184,7 +185,7 @@ class Router:
         sorties : changement de plusieurs attributs de l'objet, mais surtout de config_bgp qui contient le string de configuration à la fin de l'exécution de la fonction
         """
         my_as = autonomous_systems[self.AS_number]
-        
+
         self.voisins_ibgp = my_as.hashset_routers.difference({self.hostname})
         for link in self.links:
             if all_routers[link["hostname"]].AS_number != self.AS_number:
@@ -220,3 +221,9 @@ router bgp {self.AS_number}
  exit-address-family
 !
 """
+
+    def update_router_position(self, connector):
+        try:
+            connector.update_node_position(self.hostname, self.position["x"], self.position["y"])
+        except Exception as e:
+            print(f"Error updating position for {self.hostname}: {e}")

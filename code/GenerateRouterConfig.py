@@ -16,8 +16,8 @@ def main():
 
     # Iterate over routers and create config files
     for router in les_routers:
-
         router.create_router_if_missing(connector)
+        router.update_router_position(connector)
     for router in les_routers:
         # Generate the router configuration
         router.cleanup_used_interfaces(as_dico, router_dico, connector)

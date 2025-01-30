@@ -283,6 +283,14 @@ class Connector:
         except Exception as exce:
             print("Had an issue creating links : ", exce)
 
+    @refresh_project
+    def update_node_position(self, node_name: str, x: int, y: int):
+        try:
+            node = self.get_node(node_name)
+            node.update(x=x, y=y)
+        except Exception as e:
+            raise RuntimeError(f"Failed to update position for node '{node_name}': {e}")
+
 
 if __name__ == "__main__":
     connector = Connector()

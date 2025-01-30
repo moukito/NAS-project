@@ -50,7 +50,8 @@ def parse_intent_file(file_path: str) -> tuple[list[AS], list[Router]]:
             hostname = router["hostname"]
             links = router["links"]
             as_number = router["AS_number"]
-            les_routers.append(Router(hostname, links, as_number))
+            position = router.get("position", {"x": 0, "y": 0})
+            les_routers.append(Router(hostname, links, as_number, position))
         return (les_as, les_routers)
 
 

@@ -1,0 +1,370 @@
+{
+  "Les_AS": [
+    {
+      "ipv6_prefix": "2001:200:500::/64",
+      "AS_number": 111,
+      "routers": [
+        "R8",
+        "R9",
+        "R10",
+        "R11",
+        "R12",
+        "R13",
+        "R14"
+      ],
+      "internal_routing": "OSPF",
+      "connected_AS": [
+        [
+          110,
+          "peer",
+          {
+            "R8": "2001:200:601::/64",
+            "R9": "2001:200:602::/64"
+          }
+        ]
+      ]
+    },
+    {
+      "ipv6_prefix": "2001:200:700::/64",
+      "AS_number": 110,
+      "routers": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5",
+        "R6",
+        "R7"
+      ],
+      "internal_routing": "RIP",
+      "connected_AS": [
+        [
+          111,
+          "peer",
+          {
+            "R6": "2001:200:601::/64",
+            "R7": "2001:200:602::/64"
+          }
+        ]
+      ]
+    }
+  ],
+  "Les_routeurs": [
+    {
+      "hostname": "R1",
+      "links": [
+        {
+          "type": "Router",
+          "hostname": "R2"
+        },
+        {
+          "type": "Router",
+          "hostname": "R3"
+        }
+      ],
+      "AS_number": 110,
+      "position": {
+        "x": -700,
+        "y": 0
+      }
+    },
+    {
+      "hostname": "R2",
+      "links": [
+        {
+          "type": "Router",
+          "hostname": "R1"
+        },
+        {
+          "type": "Router",
+          "hostname": "R4"
+        },
+        {
+          "type": "Router",
+          "hostname": "R3"
+        }
+      ],
+      "AS_number": 110,
+      "position": {
+        "x": -550,
+        "y": -100
+      }
+    },
+    {
+      "hostname": "R3",
+      "links": [
+        {
+          "type": "Router",
+          "hostname": "R2"
+        },
+        {
+          "type": "Router",
+          "hostname": "R1"
+        },
+        {
+          "type": "Router",
+          "hostname": "R5"
+        }
+      ],
+      "AS_number": 110,
+      "position": {
+        "x": -550,
+        "y": 100
+      }
+    },
+    {
+      "hostname": "R4",
+      "links": [
+        {
+          "type": "Router",
+          "hostname": "R2"
+        },
+        {
+          "type": "Router",
+          "hostname": "R5"
+        },
+        {
+          "type": "Router",
+          "hostname": "R6"
+        },
+        {
+          "type": "Router",
+          "hostname": "R7"
+        }
+      ],
+      "AS_number": 110,
+      "position": {
+        "x": -350,
+        "y": -100
+      }
+    },
+    {
+      "hostname": "R5",
+      "links": [
+        {
+          "type": "Router",
+          "hostname": "R3"
+        },
+        {
+          "type": "Router",
+          "hostname": "R4"
+        },
+        {
+          "type": "Router",
+          "hostname": "R6"
+        },
+        {
+          "type": "Router",
+          "hostname": "R7"
+        }
+      ],
+      "AS_number": 110,
+      "position": {
+        "x": -350,
+        "y": 100
+      }
+    },
+    {
+      "hostname": "R6",
+      "links": [
+        {
+          "type": "Router",
+          "hostname": "R4"
+        },
+        {
+          "type": "Router",
+          "hostname": "R5"
+        },
+        {
+          "type": "Router",
+          "hostname": "R8"
+        }
+      ],
+      "AS_number": 110,
+      "position": {
+        "x": -200,
+        "y": -50
+      }
+    },
+    {
+      "hostname": "R7",
+      "links": [
+        {
+          "type": "Router",
+          "hostname": "R4"
+        },
+        {
+          "type": "Router",
+          "hostname": "R5"
+        },
+        {
+          "type": "Router",
+          "hostname": "R9"
+        }
+      ],
+      "AS_number": 110,
+      "position": {
+        "x": -200,
+        "y": 50
+      }
+    },
+    {
+      "hostname": "R8",
+      "links": [
+        {
+          "type": "Router",
+          "hostname": "R6"
+        },
+        {
+          "type": "Router",
+          "hostname": "R10"
+        },
+        {
+          "type": "Router",
+          "hostname": "R11"
+        }
+      ],
+      "AS_number": 111,
+      "position": {
+        "x": 200,
+        "y": -50
+      }
+    },
+    {
+      "hostname": "R9",
+      "links": [
+        {
+          "type": "Router",
+          "hostname": "R7"
+        },
+        {
+          "type": "Router",
+          "hostname": "R10"
+        },
+        {
+          "type": "Router",
+          "hostname": "R11"
+        }
+      ],
+      "AS_number": 111,
+      "position": {
+        "x": 200,
+        "y": 50
+      }
+    },
+    {
+      "hostname": "R10",
+      "links": [
+        {
+          "type": "Router",
+          "hostname": "R8"
+        },
+        {
+          "type": "Router",
+          "hostname": "R9"
+        },
+        {
+          "type": "Router",
+          "hostname": "R11"
+        },
+        {
+          "type": "Router",
+          "hostname": "R12"
+        }
+      ],
+      "AS_number": 111,
+      "position": {
+        "x": 350,
+        "y": -100
+      }
+    },
+    {
+      "hostname": "R11",
+      "links": [
+        {
+          "type": "Router",
+          "hostname": "R8"
+        },
+        {
+          "type": "Router",
+          "hostname": "R9"
+        },
+        {
+          "type": "Router",
+          "hostname": "R10"
+        },
+        {
+          "type": "Router",
+          "hostname": "R13"
+        }
+      ],
+      "AS_number": 111,
+      "position": {
+        "x": 350,
+        "y": 100
+      }
+    },
+    {
+      "hostname": "R12",
+      "links": [
+        {
+          "type": "Router",
+          "hostname": "R10"
+        },
+        {
+          "type": "Router",
+          "hostname": "R13"
+        },
+        {
+          "type": "Router",
+          "hostname": "R14"
+        }
+      ],
+      "AS_number": 111,
+      "position": {
+        "x": 550,
+        "y": -100
+      }
+    },
+    {
+      "hostname": "R13",
+      "links": [
+        {
+          "type": "Router",
+          "hostname": "R11"
+        },
+        {
+          "type": "Router",
+          "hostname": "R12"
+        },
+        {
+          "type": "Router",
+          "hostname": "R14"
+        }
+      ],
+      "AS_number": 111,
+      "position": {
+        "x": 550,
+        "y": 100
+      }
+    },
+    {
+      "hostname": "R14",
+      "links": [
+        {
+          "type": "Router",
+          "hostname": "R12"
+        },
+        {
+          "type": "Router",
+          "hostname": "R13"
+        }
+      ],
+      "AS_number": 111,
+      "position": {
+        "x": 700,
+        "y": 0
+      }
+    }
+  ]
+}
