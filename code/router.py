@@ -215,7 +215,7 @@ class Router:
                 self.voisins_ebgp[link["hostname"]] = all_routers[link["hostname"]].AS_number
         if mode == "telnet":
             # todo : telnet commands
-            self.config_bgp = f"router bgp {self.AS_number}\n"
+            self.config_bgp = f"router bgp {self.AS_number}\nbgp router-id {self.router_id}.{self.router_id}.{self.router_id}.{self.router_id}\n"
             config_address_family = ""
             config_neighbors_ibgp = "address-family ipv6 unicast\n"
             for voisin_ibgp in self.voisins_ibgp:
