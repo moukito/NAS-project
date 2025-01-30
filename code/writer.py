@@ -54,7 +54,7 @@ def get_final_config_string(AS: AS, router: "Router", mode: str):
 	"""
 	if mode == "telnet":
 		# todo : telnet command
-		return ""
+		return get_all_telnet_commands(AS, router)
 	if AS.internal_routing == "OSPF":
 		internal_routing = get_ospf_config_string(AS, router)
 	else:
@@ -167,3 +167,32 @@ line vty 0 4
 !
 end
 """
+
+
+def get_all_telnet_commands(AS:AS, router:"Router"):
+	community_list_setup = AS.full_community_lists.split("\n")
+	liste_raw = AS.global_route_map_out.split("\n")
+	if len(liste_raw) > 3:
+		route_maps_setup = liste_raw[:len(liste_raw) - 3] + ["exit"] + [liste_raw[-3]] + ["exit"]
+	else:
+		route_maps_setup = [AS.global_route_map_out.split("\n")[0]] + ["exit"]
+	if AS.internal_routing == "OSPF":
+		internal_routing = get_ospf_config_string(AS, router).split("\n") + ["exit"]
+	else:
+		internal_routing = get_rip_config_string(AS, router).split("\n") + ["exit"]
+	bgp_setup = router.config_bgp.split("\n")
+	loopback_setup = router.internal_routing_loopback_config.split("\n") + ["exit"]
+	for autonomous in router.used_route_maps:
+		route_maps_setup += AS.community_data[autonomous]["route_map_in"].split("\n")
+		route_maps_setup += ["exit"]
+		
+	interface_configs = []
+	for interface in router.config_str_per_link.values():
+		interface_configs += interface.split("\n")
+	final = (["config t", "ip bgp-community new-format"] + community_list_setup + route_maps_setup + internal_routing + loopback_setup + interface_configs + bgp_setup)
+	for commande in list(final):
+		if "!" in commande:
+			final.remove(commande)
+		elif commande == "":
+			final.remove(commande)
+	return final
