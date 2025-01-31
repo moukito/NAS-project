@@ -25,6 +25,7 @@ def apply_router_configuration(connector, router, config_data, mode):
 		print(config_data)
 		# Send configuration using telnet
 		try:
+			connector.start_node(router.hostname)
 			connector.telnet_connection(router.hostname)
 			connector.send_commands_to_node(config_data)  # Send commands to the router
 			connector.close_telnet_connection()
