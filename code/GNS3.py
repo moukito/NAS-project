@@ -126,8 +126,9 @@ class Connector:
 			# Ensure a Telnet session is active
 			raise RuntimeError("No active Telnet connection. Please establish a connection using telnet_connection().")
 
+		log_path = f"command_output_{self.active_node}.log"
 		try:
-			with open("command_output.log", "a") as log_file:  # Open a log file in append mode
+			with open(log_path, "w") as log_file:  # Open a log file in append mode
 				for command in commands:
 					self.telnet_session.read_very_eager()  # Clear any unread output
 
@@ -146,14 +147,9 @@ class Connector:
 						output += chunk
 
 					# Decode output and clean it from command and prompt
-					decoded_output = output.decode('ascii').replace(f"{self.active_node}#", "").replace(
-						f"{self.active_node}(config)#", "").replace(f"{self.active_node}(config-rtr)#", "").replace(
-						f"{self.active_node}(config-router)#", "").replace(f"{self.active_node}(config-router-af)#",
-					                                                       "").replace(
-						f"{self.active_node}(config-route-map)#", "").replace(f"{self.active_node}(config-if)#",
-					                                                          "").replace(command, "").strip()
+					decoded_output = output.decode('ascii').replace(f"{self.active_node}#", "").replace(f"{self.active_node}(config)#", "").replace(f"{self.active_node}(config-rtr)#", "").replace(f"{self.active_node}(config-router)#", "").replace(f"{self.active_node}(config-router-af)#", "").replace(f"{self.active_node}(config-route-map)#", "").replace(f"{self.active_node}(config-if)#", "").replace(command, "").strip()
 					log_file.write(f"Command: {command}\n{decoded_output}\n\n")  # Write to log file
-			self.clean_log("command_output.log", "command_output.log")
+			self.clean_log(log_path, log_path)
 		except Exception as e:
 			# Catch and raise errors during command execution
 			raise RuntimeError(f"Failed to send commands to {self.active_node}: {e}")
@@ -371,10 +367,7 @@ if __name__ == "__main__":
 
 	connector.start_node("R1")
 	# List of commands to execute on the node
-	commands = [
-		"show",  # Example command
-		"show run"  # Example: Display the running configuration
-	]
+	commands = ["show", "show run"]
 
 	connector.telnet_connection("R1")  # Open Telnet connection
 	connector.send_commands_to_node(commands)  # Send commands to the node
