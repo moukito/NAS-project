@@ -216,51 +216,51 @@ class Router:
         """
         my_as = autonomous_systems[self.AS_number]
 
-        self.voisins_ibgp = my_as.hashset_routers.difference({self.hostname})
-        for link in self.links:
-            if all_routers[link["hostname"]].AS_number != self.AS_number:
-                self.voisins_ebgp[link["hostname"]] = all_routers[link["hostname"]].AS_number
-        if mode == "telnet":
-            # todo : telnet commands
-            self.config_bgp = f"router bgp {self.AS_number}\nbgp router-id {self.router_id}.{self.router_id}.{self.router_id}.{self.router_id}\n"
-            config_address_family = ""
-            config_neighbors_ibgp = "address-family ipv6 unicast\n"
-            for voisin_ibgp in self.voisins_ibgp:
-                remote_ip = all_routers[voisin_ibgp].loopback_address
-                config_neighbors_ibgp += f"neighbor {remote_ip} remote-as {self.AS_number}\nneighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n"
-                config_address_family += f"neighbor {remote_ip} activate\nneighbor {remote_ip} send-community\n"
-            config_neighbors_ebgp = ""
-            for voisin_ebgp in self.voisins_ebgp:
-                remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
-                remote_as = all_routers[voisin_ebgp].AS_number
-                config_neighbors_ebgp += f"neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n"  # neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n neighbor {remote_ip} ebgp-multihop 2\n"
-                config_address_family += f"neighbor {remote_ip} activate\nneighbor {remote_ip} send-community\nneighbor {remote_ip} route-map {my_as.community_data[remote_as]["route_map_in_bgp_name"]} in\n"
-                if my_as.connected_AS_dict[remote_as][0] != "client":
-                    config_address_family += f"neighbor {remote_ip} route-map General-OUT out\n"
-                self.used_route_maps.add(remote_as)
-            config_address_family += f"network {self.loopback_address}/128\n"
-            config_address_family += f"exit\nexit\n"
-            self.config_bgp += config_neighbors_ibgp
-            self.config_bgp += config_neighbors_ebgp
-            self.config_bgp += config_address_family
-        elif mode == "cfg":
-            config_address_family = ""
-            config_neighbors_ibgp = ""
-            for voisin_ibgp in self.voisins_ibgp:
-                remote_ip = all_routers[voisin_ibgp].loopback_address
-                config_neighbors_ibgp += f"  neighbor {remote_ip} remote-as {self.AS_number}\n  neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n"
-                config_address_family += f"  neighbor {remote_ip} activate\n  neighbor {remote_ip} send-community\n"
-            config_neighbors_ebgp = ""
-            for voisin_ebgp in self.voisins_ebgp:
-                remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
-                remote_as = all_routers[voisin_ebgp].AS_number
-                config_neighbors_ebgp += f"  neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n"  # neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n neighbor {remote_ip} ebgp-multihop 2\n"
-                config_address_family += f"  neighbor {remote_ip} activate\n  neighbor {remote_ip} send-community\n  neighbor {remote_ip} route-map {my_as.community_data[remote_as]["route_map_in_bgp_name"]} in\n"
-                if my_as.connected_AS_dict[remote_as][0] != "client":
-                    config_address_family += f"  neighbor {remote_ip} route-map General-OUT out\n"
-                self.used_route_maps.add(remote_as)
-            config_address_family += f"  network {self.loopback_address}/128\n"
-            self.config_bgp = f"""
+		self.voisins_ibgp = my_as.hashset_routers.difference({self.hostname})
+		for link in self.links:
+			if all_routers[link["hostname"]].AS_number != self.AS_number:
+				self.voisins_ebgp[link["hostname"]] = all_routers[link["hostname"]].AS_number
+		if mode == "telnet":
+			# todo : telnet commands
+			self.config_bgp = f"router bgp {self.AS_number}\nbgp router-id {self.router_id}.{self.router_id}.{self.router_id}.{self.router_id}\n"
+			config_address_family = ""
+			config_neighbors_ibgp = "address-family ipv6 unicast\n"
+			for voisin_ibgp in self.voisins_ibgp:
+				remote_ip = all_routers[voisin_ibgp].loopback_address
+				config_neighbors_ibgp += f"neighbor {remote_ip} remote-as {self.AS_number}\nneighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n"
+				config_address_family += f"neighbor {remote_ip} activate\nneighbor {remote_ip} send-community\n"
+			config_neighbors_ebgp = ""
+			for voisin_ebgp in self.voisins_ebgp:
+				remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
+				remote_as = all_routers[voisin_ebgp].AS_number
+				config_neighbors_ebgp += f"neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n"  # neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n neighbor {remote_ip} ebgp-multihop 2\n"
+				config_address_family += f"neighbor {remote_ip} activate\nneighbor {remote_ip} send-community\nneighbor {remote_ip} route-map {my_as.community_data[remote_as]["route_map_in_bgp_name"]} in\n"
+				if my_as.connected_AS_dict[remote_as][0] != "client":
+					config_address_family += f"neighbor {remote_ip} route-map General-OUT out\n"
+				self.used_route_maps.add(remote_as)
+			config_address_family += f"network {self.loopback_address}/128\n"
+			config_address_family += f"exit\nexit\nexit\n"
+			self.config_bgp += config_neighbors_ibgp
+			self.config_bgp += config_neighbors_ebgp
+			self.config_bgp += config_address_family
+		elif mode == "cfg":
+			config_address_family = ""
+			config_neighbors_ibgp = ""
+			for voisin_ibgp in self.voisins_ibgp:
+				remote_ip = all_routers[voisin_ibgp].loopback_address
+				config_neighbors_ibgp += f"  neighbor {remote_ip} remote-as {self.AS_number}\n  neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n"
+				config_address_family += f"  neighbor {remote_ip} activate\n  neighbor {remote_ip} send-community\n"
+			config_neighbors_ebgp = ""
+			for voisin_ebgp in self.voisins_ebgp:
+				remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
+				remote_as = all_routers[voisin_ebgp].AS_number
+				config_neighbors_ebgp += f"  neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n"  # neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n neighbor {remote_ip} ebgp-multihop 2\n"
+				config_address_family += f"  neighbor {remote_ip} activate\n  neighbor {remote_ip} send-community\n  neighbor {remote_ip} route-map {my_as.community_data[remote_as]["route_map_in_bgp_name"]} in\n"
+				if my_as.connected_AS_dict[remote_as][0] != "client":
+					config_address_family += f"  neighbor {remote_ip} route-map General-OUT out\n"
+				self.used_route_maps.add(remote_as)
+			config_address_family += f"  network {self.loopback_address}/128\n"
+			self.config_bgp = f"""
 router bgp {self.AS_number}
  bgp router-id {self.router_id}.{self.router_id}.{self.router_id}.{self.router_id}
  bgp log-neighbor-changes
