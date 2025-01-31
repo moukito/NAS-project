@@ -91,7 +91,7 @@ class Connector:
 				print("Telnet connection established. Waiting for router to be ready...")
 
 				# Wait for the prompt indicating the router is ready
-				max_attempts = 30  # Timeout after 30 seconds
+				max_attempts = 30  # Timeout after 90 seconds
 				attempt = 0
 				while attempt < max_attempts:
 					try:
@@ -103,7 +103,7 @@ class Connector:
 							return  # Router is ready, exit the waiting loop
 					except Exception as e:
 						pass
-					time.sleep(1)
+					time.sleep(3)
 					attempt += 1
 				raise TimeoutError(f"Router {node_name} did not become ready within {max_attempts} seconds.")
 
