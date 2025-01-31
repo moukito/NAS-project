@@ -127,7 +127,7 @@ class Connector:
 			raise RuntimeError("No active Telnet connection. Please establish a connection using telnet_connection().")
 
 		try:
-			with open("command_output.log", "w") as log_file:  # Open a log file in append mode
+			with open("command_output.log", "a") as log_file:  # Open a log file in append mode
 				for command in commands:
 					self.telnet_session.read_very_eager()  # Clear any unread output
 
