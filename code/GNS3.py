@@ -146,8 +146,12 @@ class Connector:
 						output += chunk
 
 					# Decode output and clean it from command and prompt
-					decoded_output = output.decode('ascii').replace(f"{self.active_node}#", "").replace(command,
-					                                                                                    "").strip()
+					decoded_output = output.decode('ascii').replace(f"{self.active_node}#", "").replace(
+						f"{self.active_node}(config)#", "").replace(f"{self.active_node}(config-rtr)#", "").replace(
+						f"{self.active_node}(config-router)#", "").replace(f"{self.active_node}(config-router-af)#",
+					                                                       "").replace(
+						f"{self.active_node}(config-route-map)#", "").replace(f"{self.active_node}(config-if)#",
+					                                                          "").replace(command, "").strip()
 					log_file.write(f"Command: {command}\n{decoded_output}\n\n")  # Write to log file
 			self.clean_log("command_output.log", "command_output.log")
 		except Exception as e:
