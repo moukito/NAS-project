@@ -2,6 +2,7 @@ import parser
 import writer
 from GNS3 import Connector
 from saveFile import write_string_to_file
+import sys
 
 
 def apply_router_configuration(connector, router, config_data, mode):
@@ -36,8 +37,8 @@ def apply_router_configuration(connector, router, config_data, mode):
 		print(f"Invalid mode '{mode}' specified. Skipping configuration for {router.hostname}.")
 
 
-def main(mode):
-	(les_as, les_routers) = parser.parse_intent_file("format/full_infra.json")
+def main(mode, file):
+	(les_as, les_routers) = parser.parse_intent_file(file)
 
 	# Instantiating the Connector to manage configurations
 	connector = Connector()  # Assuming project name "nap" with the Connector class
@@ -69,8 +70,17 @@ def main(mode):
 
 
 if __name__ == "__main__":
-	mode = input("Enter mode (cfg/telnet): ").strip().lower()
+	args_cons = sys.argv
+	if len(args_cons) == 2:
+		mode = str(args_cons[1])
+		file = "format/full_infra.json"
+	elif len(args_cons) == 3:
+		mode = str(args_cons[1])
+		file = str(args_cons[2])
+	else:
+		mode = input("Enter mode (cfg/telnet): ").strip().lower()
+		file = "format/full_infra.json"
 	if mode not in ["cfg", "telnet"]:
 		print("Invalid mode specified. Please use 'cfg' or 'telnet'.")
 		exit(1)
-	main(mode)
+	main(mode, file)
