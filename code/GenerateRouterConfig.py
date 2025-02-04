@@ -58,7 +58,8 @@ def main(mode, file):
 		router.set_loopback_configuration_data(as_dico, router_dico, mode)
 		router.create_missing_links(as_dico, router_dico, connector)
 
-	threads = {router.hostname: threading.Thread() for router in les_routers}
+	if mode == 'telnet':
+		threads = {router.hostname: threading.Thread() for router in les_routers}
 	config_data = {router.hostname: "" for router in les_routers}
 	for router in les_routers:
 		router.set_bgp_config_data(as_dico, router_dico, mode)
@@ -80,7 +81,8 @@ def main(mode, file):
 			print(f"Error creating configuration for {router.hostname}: {e}")
 	for router in les_routers:
 		try:
-			threads[router.hostname].join()
+			if mode == 'telnet':
+				threads[router.hostname].join()
 			apply_router_configuration(connector, router, config_data[router.hostname], mode)
 		except (ValueError, FileNotFoundError) as e:
 			print(f"Error applying configuration for {router.hostname}: {e}")
