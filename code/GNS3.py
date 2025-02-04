@@ -34,8 +34,7 @@ class Connector:
 					break
 		self.project = gns3fy.Project(project_name, connector=self.server)
 		self.project.get()  # Load project details
-		self.telnet_session = None  # Placeholder for Telnet session
-		self.active_node = None  # Currently active node
+		self.telnet_session = {}  # Placeholder for Telnet session
 
 	def get_router_config_path(self, node_name: str) -> str:
 		"""
@@ -85,8 +84,8 @@ class Connector:
 
 			try:
 				# Establish Telnet connection to the node
-				self.telnet_session = telnetlib.Telnet(host, port)
-				self.active_node = node_name  # Set the active node name
+				self.telnet_session[node_name] = telnetlib.Telnet(host, port)
+				node_name = node_name  # Set the active node name
 
 				print("Telnet connection established. Waiting for router to be ready...")
 
@@ -95,90 +94,90 @@ class Connector:
 				attempt = 0
 				while attempt < max_attempts:
 					try:
-						self.telnet_session.write(b"\r\n")
-						output = self.telnet_session.read_very_eager().decode('ascii')
-						if f"{self.active_node}#" in output:
+						self.telnet_session[node_name].write(b"\r\n")
+						output = self.telnet_session[node_name].read_very_eager().decode('ascii')
+						if f"{node_name}#" in output:
 							print(f"Router {node_name} is ready.")
-							self.telnet_session.write(b"\r\n")
+							self.telnet_session[node_name].write(b"\r\n")
 							time.sleep(1)
-							self.telnet_session.read_until(f"{self.active_node}#".encode('ascii'))
+							self.telnet_session[node_name].read_until(f"{node_name}#".encode('ascii'))
 							return  # Router is ready, exit the waiting loop
 					except Exception as e:
 						pass
 					time.sleep(3)
 					attempt += 1
-				raise TimeoutError(f"Router {node_name} did not become ready within {max_attempts} seconds.")
+				raise TimeoutError(f"Router {node_name} did not become ready within {max_attempts * 3} seconds.")
 
 			except Exception as e:
 				# Reset on failure and raise a connection error
-				self.telnet_session = None
-				self.active_node = None
+				self.telnet_session[node_name] = None
+				node_name = None
 				raise ConnectionError(f"Failed to connect to {node_name}: {e}")
 		else:
 			raise ValueError(f"Node {node_name} not found in the project.")  # Raise error if node not found
 
-	def send_commands_to_node(self, commands: list) -> None:
+	def send_commands_to_node(self, commands: list, node_name) -> None:
 		"""
 		Sends commands one at a time to the open Telnet connection, supporting Cisco's "More" prompt.
 
 		:param commands: A list of strings, each representing a command to send.
 		:raises RuntimeError: If no Telnet session is active.
 		"""
-		if self.telnet_session is None or self.active_node is None:
+		if self.telnet_session.get(node_name, None) is None:
 			# Ensure a Telnet session is active
 			raise RuntimeError("No active Telnet connection. Please establish a connection using telnet_connection().")
 
-		log_path = f"command_output_{self.active_node}.log"
+		log_path = f"command_output_{node_name}.log"
 		try:
 			with open(log_path, "w") as log_file:  # Open a log file in append mode
 				for command in commands:
 					print(f"Sending command: {command}")
-					self.telnet_session.write(command.encode('ascii') + b"\r\n")  # Send the command
+					self.telnet_session[node_name].write(command.encode('ascii') + b"\r\n")  # Send the command
 
 					output = b""  # Aggregate command output
 
 					# Read output until prompt is back
-					chunk = self.telnet_session.read_until(f"#".encode('ascii'), timeout=2)
+					chunk = self.telnet_session[node_name].read_until(f"#".encode('ascii'), timeout=2)
 					output += chunk
 
 					while b"--More--" in chunk:  # Handle "More" prompts in output
-						self.telnet_session.write(b" ")  # Send space for "More"
-						chunk = self.telnet_session.read_until(b"--More--", timeout=2)
+						self.telnet_session[node_name].write(b" ")  # Send space for "More"
+						chunk = self.telnet_session[node_name].read_until(b"--More--", timeout=2)
 						output += chunk
 
 					# Decode output and clean it from command and prompt
-					decoded_output = output.decode('ascii').replace(f"{self.active_node}#", "").replace(f"{self.active_node}(config)#", "").replace(f"{self.active_node}(config-rtr)#", "").replace(f"{self.active_node}(config-router)#", "").replace(f"{self.active_node}(config-router-af)#", "").replace(f"{self.active_node}(config-route-map)#", "").replace(f"{self.active_node}(config-if)#", "").replace(command, "").strip()
+					decoded_output = output.decode('ascii').replace(f"{node_name}#", "").replace(f"{node_name}(config)#", "").replace(f"{node_name}(config-rtr)#", "").replace(f"{node_name}(config-router)#", "").replace(f"{node_name}(config-router-af)#", "").replace(f"{node_name}(config-route-map)#", "").replace(f"{node_name}(config-if)#", "").replace(command, "").strip()
 					log_file.write(f"Command: {command}\n{decoded_output}\n\n")  # Write to log file
 			self.clean_log(log_path, log_path)
 		except Exception as e:
 			# Catch and raise errors during command execution
-			raise RuntimeError(f"Failed to send commands to {self.active_node}: {e}")
+			raise RuntimeError(f"Failed to send commands to {node_name}: {e}")
 
-	def close_telnet_connection(self) -> None:
+	def close_telnet_connection(self, node_name) -> None:
 		"""
 		Closes the active Telnet connection gracefully.
 		"""
-		if self.telnet_session:
+		if self.telnet_session[node_name]:
 			try:
 				# Gracefully close the Telnet connection
-				self.telnet_session.write(b"\r\n")
-				self.telnet_session.close()
-				print(f"Telnet connection to {self.active_node} has been closed.")
+				self.telnet_session[node_name].write(b"\r\n")
+				self.telnet_session[node_name].close()
+				print(f"Telnet connection to {node_name} has been closed.")
 			except Exception as e:
 				# Log error during closure
 				print(f"Error closing Telnet connection: {e}")
 			finally:
-				self.telnet_session = None  # Reset Telnet session
-				self.active_node = None  # Reset active node
+				self.telnet_session[node_name] = None  # Reset Telnet session
 		else:
 			print("No active Telnet connection to close.")  # No action needed if no active session
 
 	def __del__(self):
 		"""Automatically closes Telnet connection if not closed by the user."""
-		if self.telnet_session:
-			# Warn user and close Telnet connection on object deletion
-			print("Automatically closing Telnet connection...")
-			self.close_telnet_connection()
+		for node_name, session in self.telnet_session.items():
+			if session:
+				# Warn user and close Telnet connection on object deletion
+				print("Automatically closing Telnet connection...")
+				self.close_telnet_connection(node_name)
 
 	@staticmethod
 	def refresh_project(func):
@@ -370,5 +369,5 @@ if __name__ == "__main__":
 	commands = ["show", "show run"]
 
 	connector.telnet_connection("R1")  # Open Telnet connection
-	connector.send_commands_to_node(commands)  # Send commands to the node
-	connector.close_telnet_connection()
+	connector.send_commands_to_node(commands, "R1")  # Send commands to the node
+	connector.close_telnet_connection("R1")

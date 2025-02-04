@@ -28,9 +28,8 @@ def apply_router_configuration(connector, router, config_data, mode):
 		print(config_data)
 		# Send configuration using telnet
 		try:
-			connector.telnet_connection(router.hostname)
-			connector.send_commands_to_node(config_data)  # Send commands to the router
-			connector.close_telnet_connection()
+			connector.send_commands_to_node(config_data, router.hostname)  # Send commands to the router
+			connector.close_telnet_connection(router.hostname)
 			print(f"Configuration for {router.hostname} applied via Telnet.")
 		except (RuntimeError, ConnectionError) as e:
 			print(f"Error applying configuration to {router.hostname}: {e}")
@@ -69,12 +68,14 @@ def main(mode, file):
 			config_data[router.hostname] = writer.get_final_config_string(as_dico[router.AS_number], router, mode)
 
 			if mode == 'telnet':
+				connector.start_node(router.hostname)
 				threads[router.hostname] = threading.Thread(
-					target=connector.start_node,
+					target=connector.telnet_connection,
 					args=(router.hostname,),
 					daemon=True
 				)
 				threads[router.hostname].start()
+
 		except (ValueError, FileNotFoundError) as e:
 			print(f"Error creating configuration for {router.hostname}: {e}")
 	for router in les_routers:
