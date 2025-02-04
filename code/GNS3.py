@@ -99,6 +99,8 @@ class Connector:
 						output = self.telnet_session.read_very_eager().decode('ascii')
 						if f"{self.active_node}#" in output:
 							print(f"Router {node_name} is ready.")
+							self.telnet_session.write(b"\r\n")
+							time.sleep(1)
 							self.telnet_session.read_until(f"{self.active_node}#".encode('ascii'))
 							return  # Router is ready, exit the waiting loop
 					except Exception as e:
@@ -130,15 +132,13 @@ class Connector:
 		try:
 			with open(log_path, "w") as log_file:  # Open a log file in append mode
 				for command in commands:
-					self.telnet_session.read_very_eager()  # Clear any unread output
-
 					print(f"Sending command: {command}")
 					self.telnet_session.write(command.encode('ascii') + b"\r\n")  # Send the command
 
 					output = b""  # Aggregate command output
 
 					# Read output until prompt is back
-					chunk = self.telnet_session.read_until(f"{self.active_node}#".encode('ascii'), timeout=2)
+					chunk = self.telnet_session.read_until(f"#".encode('ascii'), timeout=2)
 					output += chunk
 
 					while b"--More--" in chunk:  # Handle "More" prompts in output
