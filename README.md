@@ -24,6 +24,9 @@ repo du code du groupe 14 du projet GNS3 en 3TC
             - "interface": OPTIONNEL, l'interface physique complète que ce lien doit utiliser, permet de contrôler l'allocation des interfaces pour différents liens si nécessaire (forcer un lien vers un autre AS à utiliser une interface rapide par exemple)
             - "ospf_cost": OPTIONNEL, permet de donner un coût entier OSPF strictement positif à un lien, écrasant la valeur calculée par le routeur si cette configuration n'est pas fournie
             - REMARQUE : Il ne peut pas y avoir plusieurs liens par interface, et on doit avoir len(links) <= (nombre d'interfaces physiques sur le routeur)
+        - "position": dictionnaire donnant la position 2D où mettre le routeur dans le projet GNS3
+            - "x": position entière positive horizontale
+            - "y": position entière positive verticale
 
 ## Exécution
 - testé et codé pour python 3.12.x

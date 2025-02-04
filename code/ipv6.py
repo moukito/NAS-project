@@ -109,5 +109,3 @@ def str_network_into_list(network_address:IPv6Network) -> tuple[list[int], int]:
     for i in range(len(numbers_past_2_semicol)):
         numbers[-(i + len(numbers_past_2_semicol))] = numbers_past_2_semicol[i]
     return (numbers, free_slots_start)
-
-print(str_network_into_list(IPv6Network("2001:500:3:5::/64")))

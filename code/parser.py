@@ -53,21 +53,3 @@ def parse_intent_file(file_path: str) -> tuple[list[AS], list[Router]]:
             position = router.get("position", {"x": 0, "y": 0})
             les_routers.append(Router(hostname, links, as_number, position))
         return (les_as, les_routers)
-
-
-if __name__ == "__main__":
-    (les_as, les_routeurs) = parse_intent_file("format/exemple.json")
-    for autonomous in les_as:
-        print(autonomous)
-
-    as_dico = as_list_into_as_number_dictionary(les_as)
-    routeur_dico = router_list_into_hostname_dictionary(les_routeurs)
-
-    for routeur in les_routeurs:
-        routeur.set_interface_configuration_data(as_dico, routeur_dico)
-        print(routeur.config_str_per_link)
-
-    for routeur in les_routeurs:
-        routeur.set_bgp_config_data(as_dico, routeur_dico)
-        print(get_final_config_string(as_dico[routeur.AS_number], routeur))
-    # print(hex(256))
