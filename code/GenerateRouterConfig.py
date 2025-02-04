@@ -1,8 +1,10 @@
+import sys
+import threading
+
 import parser
 import writer
 from GNS3 import Connector
 from saveFile import write_string_to_file
-import sys
 
 
 def apply_router_configuration(connector, router, config_data, mode):
@@ -26,7 +28,6 @@ def apply_router_configuration(connector, router, config_data, mode):
 		print(config_data)
 		# Send configuration using telnet
 		try:
-			connector.start_node(router.hostname)
 			connector.telnet_connection(router.hostname)
 			connector.send_commands_to_node(config_data)  # Send commands to the router
 			connector.close_telnet_connection()
@@ -57,16 +58,31 @@ def main(mode, file):
 	for router in les_routers:
 		router.set_loopback_configuration_data(as_dico, router_dico, mode)
 		router.create_missing_links(as_dico, router_dico, connector)
+
+	threads = {router.hostname: threading.Thread() for router in les_routers}
+	config_data = {router.hostname: "" for router in les_routers}
 	for router in les_routers:
 		router.set_bgp_config_data(as_dico, router_dico, mode)
 
 		# Get the path for the router's config file
 		try:
-			config_data = writer.get_final_config_string(as_dico[router.AS_number], router, mode)
+			config_data[router.hostname] = writer.get_final_config_string(as_dico[router.AS_number], router, mode)
 
-			apply_router_configuration(connector, router, config_data, mode)
+			if mode == 'telnet':
+				threads[router.hostname] = threading.Thread(
+					target=connector.start_node,
+					args=(router.hostname,),
+					daemon=True
+				)
+				threads[router.hostname].start()
 		except (ValueError, FileNotFoundError) as e:
-			print(f"Error creating or applying configuration for {router.hostname}: {e}")
+			print(f"Error creating configuration for {router.hostname}: {e}")
+	for router in les_routers:
+		try:
+			threads[router.hostname].join()
+			apply_router_configuration(connector, router, config_data[router.hostname], mode)
+		except (ValueError, FileNotFoundError) as e:
+			print(f"Error applying configuration for {router.hostname}: {e}")
 
 
 if __name__ == "__main__":
