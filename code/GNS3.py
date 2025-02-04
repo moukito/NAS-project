@@ -7,25 +7,19 @@ import gns3fy
 
 class Connector:
 	"""
-	A Connector class for managing Gns3 connections and interacting with network nodes.
-
-	The Connector class is designed to interface with a Gns3 server, manage projects,
-	connect to nodes via Telnet, and execute commands on those nodes. It provides
-	methods for retrieving node configuration paths, establishing Telnet sessions,
-	sending commands, and closing connections.
-
-	:ivar server: Connection object to the Gns3 server.
-	:type server: Gns3Connector
-	:ivar project: Representation of the Gns3 project to interact with.
-	:type project: Project
-	:ivar telnet_session: Active Telnet session object to a network node.
-	:type telnet_session: Telnet | None
-	:ivar active_node: Name of the currently connected network node.
-	:type active_node: str | None
+	Connector class to interact with a GNS3 project, manage nodes, and send commands
+	via Telnet sessions.
 	"""
 
 	def __init__(self, project_name: str = None, server: str = "http://localhost:3080") -> None:
-		# Initialize the Gns3 server connection and project
+		"""
+		Initializes a connection to a GNS3 server and loads a project.
+
+		Args:
+			project_name (str): The name of the GNS3 project to load. If None, it selects the
+								first opened project automatically.
+			server (str): The GNS3 server URL (default: "http://localhost:3080").
+		"""
 		self.server = gns3fy.Gns3Connector(server)
 		if project_name is None:
 			for project in self.server.get_projects():
@@ -33,64 +27,68 @@ class Connector:
 					project_name = project["name"]
 					break
 		self.project = gns3fy.Project(project_name, connector=self.server)
-		self.project.get()  # Load project details
-		self.telnet_session = {}  # Placeholder for Telnet session
+		self.project.get()
+		self.telnet_session = {}
 
 	def get_router_config_path(self, node_name: str) -> str:
 		"""
-		Get the path to the configuration file of a specified node.
+		Retrieves the path to the startup configuration file for a given router.
 
-		:param node_name: Name of the node to retrieve the config file path.
-		:return: The path to the config file if the node exists.
-		:raises ValueError: If the specified node is not found.
+		Args:
+			node_name (str): Name of the router/node.
+
+		Returns:
+			str: Path to the router's startup configuration file.
+
+		Raises:
+			FileNotFoundError: If the configuration directory or file does not exist.
+			ValueError: If the specified node is not found in the project.
 		"""
-		# Find the specified node in the project nodes list
 		node = next((n for n in self.project.nodes if n.name == node_name), None)
 		if node:
 			path = os.path.join(node.node_directory, "configs")
-			# Check if the config path exists
 			if not os.path.isdir(path):
 				raise FileNotFoundError(f"The configs directory does not exist at {path}")
 
-			# Search for the file containing 'startup-config'
 			for root, _, files in os.walk(path):
 				for file in files:
 					if "startup-config.cfg" in file:
-						# Return the full file path if found
-						return os.path.join(root, file)  # Return the node's directory
+						return os.path.join(root, file)
 
-			# Raise an exception if no matching file is found
 			raise FileNotFoundError(f"No startup-config file found in {path}")
 		else:
-			raise ValueError(f"Node {node_name} not found in the project.")  # Raise error if node not found
+			raise ValueError(f"Node {node_name} not found in the project.")
 
 	def telnet_connection(self, node_name: str) -> None:
 		"""
-		Opens a Telnet connection to the specified node and keeps it open.
+		Establishes a Telnet connection to a given router/node.
 
-		:param node_name: Name of the node to connect to.
+		Args:
+			node_name (str): Name of the router/node.
+
+		Raises:
+			ValueError: If the node does not support Telnet or does not exist.
+			ConnectionError: If the connection fails.
+			TimeoutError: If the router does not become ready within the expected time.
 		"""
-		# Find the specified node in the project nodes list
 		node = next((n for n in self.project.nodes if n.name == node_name), None)
 
 		if node:
-			if node.console_type != "telnet":  # Ensure the node supports Telnet
+			if node.console_type != "telnet":
 				raise ValueError(f"Node {node_name} does not support Telnet.")
 
 			host = "localhost"
-			port = node.console  # Get the console port for Telnet
+			port = node.console
 
 			print(f"Connecting to {node_name} on {host}:{port} via Telnet...")
 
 			try:
-				# Establish Telnet connection to the node
 				self.telnet_session[node_name] = telnetlib.Telnet(host, port)
-				node_name = node_name  # Set the active node name
+				node_name = node_name
 
 				print("Telnet connection established. Waiting for router to be ready...")
 
-				# Wait for the prompt indicating the router is ready
-				max_attempts = 30  # Timeout after 90 seconds
+				max_attempts = 30
 				attempt = 0
 				while attempt < max_attempts:
 					try:
@@ -101,7 +99,7 @@ class Connector:
 							self.telnet_session[node_name].write(b"\r\n")
 							time.sleep(1)
 							self.telnet_session[node_name].read_until(f"{node_name}#".encode('ascii'))
-							return  # Router is ready, exit the waiting loop
+							return
 					except Exception as e:
 						pass
 					time.sleep(3)
@@ -109,86 +107,96 @@ class Connector:
 				raise TimeoutError(f"Router {node_name} did not become ready within {max_attempts * 3} seconds.")
 
 			except Exception as e:
-				# Reset on failure and raise a connection error
 				self.telnet_session[node_name] = None
 				node_name = None
 				raise ConnectionError(f"Failed to connect to {node_name}: {e}")
 		else:
-			raise ValueError(f"Node {node_name} not found in the project.")  # Raise error if node not found
+			raise ValueError(f"Node {node_name} not found in the project.")
 
 	def send_commands_to_node(self, commands: list, node_name) -> None:
 		"""
-		Sends commands one at a time to the open Telnet connection, supporting Cisco's "More" prompt.
+		Sends a list of commands to a router via an active Telnet connection.
 
-		:param commands: A list of strings, each representing a command to send.
-		:raises RuntimeError: If no Telnet session is active.
+		Args:
+			commands (list): List of commands to send to the router.
+			node_name (str): Name of the router/node.
+
+		Raises:
+			RuntimeError: If there is no active Telnet connection or if the
+				command execution fails.
 		"""
 		if self.telnet_session.get(node_name, None) is None:
-			# Ensure a Telnet session is active
 			raise RuntimeError("No active Telnet connection. Please establish a connection using telnet_connection().")
 
 		log_path = f"command_output_{node_name}.log"
 		try:
-			with open(log_path, "w") as log_file:  # Open a log file in append mode
+			with open(log_path, "w") as log_file:
 				for command in commands:
 					print(f"Sending command: {command}")
-					self.telnet_session[node_name].write(command.encode('ascii') + b"\r\n")  # Send the command
+					self.telnet_session[node_name].write(command.encode('ascii') + b"\r\n")
 
-					output = b""  # Aggregate command output
+					output = b""
 
-					# Read output until prompt is back
 					chunk = self.telnet_session[node_name].read_until(f"#".encode('ascii'), timeout=2)
 					output += chunk
 
-					while b"--More--" in chunk:  # Handle "More" prompts in output
-						self.telnet_session[node_name].write(b" ")  # Send space for "More"
+					while b"--More--" in chunk:
+						self.telnet_session[node_name].write(b" ")
 						chunk = self.telnet_session[node_name].read_until(b"--More--", timeout=2)
 						output += chunk
 
-					# Decode output and clean it from command and prompt
 					decoded_output = output.decode('ascii').replace(f"{node_name}#", "").replace(f"{node_name}(config)#", "").replace(f"{node_name}(config-rtr)#", "").replace(f"{node_name}(config-router)#", "").replace(f"{node_name}(config-router-af)#", "").replace(f"{node_name}(config-route-map)#", "").replace(f"{node_name}(config-if)#", "").replace(command, "").strip()
-					log_file.write(f"Command: {command}\n{decoded_output}\n\n")  # Write to log file
+					log_file.write(f"Command: {command}\n{decoded_output}\n\n")
 			self.clean_log(log_path, log_path)
 		except Exception as e:
-			# Catch and raise errors during command execution
 			raise RuntimeError(f"Failed to send commands to {node_name}: {e}")
 
-	def close_telnet_connection(self, node_name) -> None:
+	def close_telnet_connection(self, node_name: str) -> None:
 		"""
-		Closes the active Telnet connection gracefully.
+		Closes the Telnet connection to a specified router/node.
+
+		Args:
+			node_name (str): Name of the router/node.
+
+		Raises:
+			Exception: If closing the connection fails.
 		"""
 		if self.telnet_session[node_name]:
 			try:
-				# Gracefully close the Telnet connection
 				self.telnet_session[node_name].write(b"\r\n")
 				self.telnet_session[node_name].close()
 				print(f"Telnet connection to {node_name} has been closed.")
 			except Exception as e:
-				# Log error during closure
 				print(f"Error closing Telnet connection: {e}")
 			finally:
-				self.telnet_session[node_name] = None  # Reset Telnet session
+				self.telnet_session[node_name] = None
 		else:
-			print("No active Telnet connection to close.")  # No action needed if no active session
+			print("No active Telnet connection to close.")
 
 	def __del__(self):
-		"""Automatically closes Telnet connection if not closed by the user."""
+		"""
+		Destructor function to close all Telnet connections automatically
+		when the Connector object is deleted.
+		"""
 		for node_name, session in self.telnet_session.items():
 			if session:
-				# Warn user and close Telnet connection on object deletion
 				print("Automatically closing Telnet connection...")
 				self.close_telnet_connection(node_name)
 
 	@staticmethod
 	def refresh_project(func):
 		"""
-		A decorator to call `self.project.get()` after the execution of the decorated function.
+		Decorator to refresh the project state before and after calling a method.
+
+		Args:
+			func: The method to decorate.
+
+		Returns:
+			A wrapped function that refreshes the project state after execution.
 		"""
 
 		def wrapper(self, *args, **kwargs):
-			# Execute the original function
 			result = func(self, *args, **kwargs)
-			# Refresh the project state
 			self.project.get()
 			return result
 
@@ -196,26 +204,31 @@ class Connector:
 
 	def get_node(self, node_name: str) -> gns3fy.Node:
 		"""
-		Returns the node of name node_name 's data, or raises an error if it doesn't exist in the project
+		Retrieves a node object from the current GNS3 project.
 
-		input:node_name : hostname of node as a string
-		returns: the corresponding node dict
-		raises ValueError: If the specified node is not found.
+		Args:
+			node_name (str): Name of the node to retrieve.
+
+		Returns:
+			gns3fy.Node: The retrieved node object.
+
+		Raises:
+			ValueError: If the node does not exist in the project.
 		"""
-		# Find the specified node in the project nodes list
 		node = next((n for n in self.project.nodes if n.name == node_name), None)
 		if node:
-			return node  # Return the node's directory
+			return node
 		else:
-			raise ValueError(f"Node {node_name} not found in the project.")  # Raise error if node not found
+			raise ValueError(f"Node {node_name} not found in the project.")
 
 	@refresh_project
-	def create_node(self, node_name: str, template: str):
+	def create_node(self, node_name: str, template: str) -> None:
 		"""
-		Creates a node with the given name and template in the project
+		Creates a new node in the GNS3 project.
 
-		input : node_name, the name of the node (equivalent to the hostname for a router !) and the template name (for example, "c7200" for the routers we use)
-		output : creates the node in the GNS project, will raise an error if the node already exists
+		Args:
+			node_name (str): Name of the new node.
+			template (str): Template for the node.
 		"""
 		node = gns3fy.Node(
 			project_id=self.project.project_id,
@@ -225,12 +238,19 @@ class Connector:
 		)
 		node.create()
 
-	def get_used_interface_for_link(self, r1: str, r2: str):
+	def get_used_interface_for_link(self, r1: str, r2: str) -> int:
 		"""
-		Returns the interface used for a link FROM r1 TO r2 (must be used the other way to get both ways)
+		Identifies the interface used for the link between two nodes.
 
-		input: r1 and r2, hostname strings
-		returns: name of interface (assumed to be of shape GigabitEtherneti/0) or None if the link doesn't exist in the GNS3 project
+		Args:
+			r1 (str): Name of the first node (router).
+			r2 (str): Name of the second node (router).
+
+		Returns:
+			int: The interface number used by the first node in the link.
+
+		Raises:
+			KeyError: If no link exists between the specified nodes in the project.
 		"""
 		node_1 = self.get_node(r1)
 		node_2 = self.get_node(r2)
@@ -252,13 +272,19 @@ class Connector:
 			return interface
 
 	@refresh_project
-	def create_link_if_it_doesnt_exist(self, r1: str, r2: str, interface_1: int, interface_2: int):
+	def create_link_if_it_doesnt_exist(self, r1: str, r2: str, interface_1: int, interface_2: int) -> None:
 		"""
-		Creates the link between r1 and r2 using the given interface if it doesn't exist
+		Creates a link between two routers if it does not already exist.
 
-		input : r1 and r2, hostname strings of the 2 routers, interface_1 the index in the standard interfaces of router r1 and interface_2 the same for r2
-		returns : nothing
-		raises : ValueError if the interfaces needed are already either in use
+		Args:
+			r1 (str): Name of the first router.
+			r2 (str): Name of the second router.
+			interface_1 (int): Interface adapter number for the first router.
+			interface_2 (int): Interface adapter number for the second router.
+
+		Raises:
+			ValueError: If the specified interfaces are already in use.
+			Exception: If an error occurs while creating the link.
 		"""
 		try:
 			node_1 = self.get_node(r1)
@@ -294,8 +320,6 @@ class Connector:
 						{"node_id": node_1.node_id, "adapter_number": interface_1, "port_number": 0},
 						{"node_id": node_2.node_id, "adapter_number": interface_2, "port_number": 0}
 					]
-					# nodes[0].pop("__pydantic_initialised__")
-					# nodes[1].pop("__pydantic_initialised__")
 					link = gns3fy.Link(project_id=self.project.project_id, connector=self.server, nodes=nodes)
 					link.create()
 
@@ -303,7 +327,18 @@ class Connector:
 			print("Had an issue creating links : ", exce)
 
 	@refresh_project
-	def update_node_position(self, node_name: str, x: int, y: int):
+	def update_node_position(self, node_name: str, x: int, y: int) -> None:
+		"""
+		Updates the position of a specified node in the GNS3 project.
+
+		Args:
+			node_name (str): Name of the node to update.
+			x (int): New X-coordinate for the node.
+			y (int): New Y-coordinate for the node.
+
+		Raises:
+			RuntimeError: If updating the position fails for any reason.
+		"""
 		try:
 			node = self.get_node(node_name)
 			node.update(x=x, y=y)
@@ -311,7 +346,16 @@ class Connector:
 			raise RuntimeError(f"Failed to update position for node '{node_name}': {e}")
 
 	@refresh_project
-	def start_node(self, node_name: str):
+	def start_node(self, node_name: str) -> None:
+		"""
+		Stops and then starts the specified node (reboots it).
+
+		Args:
+			node_name (str): Name of the node to start.
+
+		Raises:
+			Exception: If the node cannot be stopped or started.
+		"""
 		node = self.get_node(node_name)
 		node.stop()
 		node.start()
@@ -319,10 +363,19 @@ class Connector:
 	@staticmethod
 	def clean_log(input_file: str, output_file: str) -> None:
 		"""
-		Clean a log file by removing '--More--' lines and extra newlines.
+		Cleans up a log file by removing empty/unused lines and specific markers like `--More--`.
 
-		:param input_file: Path to the input log file.
-		:param output_file: Path to the cleaned log file to be created.
+		Args:
+			input_file (str): Path to the input log file.
+			output_file (str): Path where the cleaned-up log file will be saved.
+
+		Raises:
+			FileNotFoundError: If the input file does not exist.
+			Exception: If any other error occurs during log cleanup.
+
+		Notes:
+			This function removes markers like `--More--` and ensures the output
+			file contains neatly formatted command outputs.
 		"""
 		try:
 			with open(input_file, "r") as log_file:
@@ -330,12 +383,10 @@ class Connector:
 
 			cleaned_lines = []
 			for line in lines:
-				# Remove lines containing "--More--" and adjacent spaces
 				if "--More--" in line:
 					continue
-				# Strip extra spaces and preserve the line
 				stripped_line = line.rstrip()
-				if stripped_line:  # Ignore empty lines
+				if stripped_line:
 					if len(cleaned_lines) == 0:
 						cleaned_lines.append(stripped_line + "\n")
 					elif stripped_line.startswith("Command: "):
@@ -343,7 +394,6 @@ class Connector:
 					else:
 						cleaned_lines.append(stripped_line)
 
-			# Write the cleaned content into the output file
 			with open(output_file, "w") as cleaned_log:
 				cleaned_log.write("\n".join(cleaned_lines))
 
@@ -357,17 +407,16 @@ class Connector:
 
 if __name__ == "__main__":
 	connector = Connector()
-	print(f"Project '{connector.project.name}' connection successful.")  # Confirm project connection
-	print(f"Project '{connector.project.name}' has {len(connector.project.nodes)} nodes.")  # Node count
-	print(f"connector.project.nodes: {connector.project.nodes}")  # Print nodes in the project
+	print(f"Project '{connector.project.name}' connection successful.")
+	print(f"Project '{connector.project.name}' has {len(connector.project.nodes)} nodes.")
+	print(f"connector.project.nodes: {connector.project.nodes}")
 	print(f"connector.project.links: {connector.project.links}")
-	print(connector.get_router_config_path("R1"))  # Config path for node R1
-	# print(f"{connector.get_used_interface_for_link("R1", "R2")}")
+	print(connector.get_router_config_path("R1"))
+	print(f"{connector.get_used_interface_for_link("R1", "R2")}")
 
 	connector.start_node("R1")
-	# List of commands to execute on the node
 	commands = ["show", "show run"]
 
-	connector.telnet_connection("R1")  # Open Telnet connection
-	connector.send_commands_to_node(commands, "R1")  # Send commands to the node
+	connector.telnet_connection("R1")
+	connector.send_commands_to_node(commands, "R1")
 	connector.close_telnet_connection("R1")
