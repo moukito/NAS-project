@@ -34,6 +34,8 @@ repo du code du groupe 14 du projet GNS3 en 3TC
 - lancer GNS3 avec un projet vide ou un état intermédiaire du réseau décrit dans le fichier d'intention voulu
 - lancer `GenerateRouterConfig.py {cfg/telnet} {chemin relatif ou absolu vers le fichier d'intention}` avec un interpréteur python 3.12.x
 
+Remarque : Comme seules les loopback sont advertised en BGP, pour ping entre routeurs il faut faire `ping {cible} source lo1` (le `source lo1` met comme adresse source l'adresse de loopback du routeur qui ping, ce qui permet aux ICMP echo reply de revenir)
+
 
 ## Fonctionnalités supportées (Telles que listées sur le document du sujet)
 - Network Automation
