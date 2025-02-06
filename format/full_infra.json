@@ -219,7 +219,8 @@
         },
         {
           "type": "Router",
-          "hostname": "R10"
+          "hostname": "R10",
+          "ospf_cost":100
         },
         {
           "type": "Router",
@@ -259,7 +260,8 @@
       "links": [
         {
           "type": "Router",
-          "hostname": "R8"
+          "hostname": "R8",
+          "ospf_cost":100
         },
         {
           "type": "Router",
