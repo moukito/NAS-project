@@ -454,7 +454,7 @@ router bgp {self.AS_number}
 
     def set_ldp_config_data(self, mode: str):
         if mode == "telnet":
-            config_ldp = f"mpls ip\nmpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
+            config_ldp = f"mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
         elif mode == "cfg":
             #todo
             pass
