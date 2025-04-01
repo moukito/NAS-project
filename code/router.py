@@ -2,14 +2,15 @@ from GNS3 import Connector
 from autonomous_system import AS
 from ipv6 import SubNetwork
 from writer import LINKS_STANDARD, NOM_PROCESSUS_IGP_PAR_DEFAUT, STANDARD_LOOPBACK_INTERFACE
-from ipaddress import IPv6Address
+from ipaddress import IPv6Address, IPv4Address, IPv6Network, IPv4Network
 
 
 class Router:
-    def __init__(self, hostname: str, links, AS_number: int, position=None):
+    def __init__(self, hostname: str, links, AS_number: int, position=None, ip_version: int = 6):
         self.hostname = hostname
         self.links = links
         self.AS_number = AS_number
+        self.ip_version = ip_version
         self.passive_interfaces = set()
         self.loopback_interfaces = set()
         self.counter_loopback_interfaces = 0
@@ -27,7 +28,11 @@ class Router:
         self.available_interfaces = [LINKS_STANDARD[i] for i in range(len(LINKS_STANDARD))]
         self.config_bgp = "!"
         self.position = position if position else {"x": 0, "y": 0}
-        self.loopback_address = IPv6Address("0::")
+        # Initialisation de l'adresse de loopback selon la version IP
+        if self.ip_version == 6:
+            self.loopback_address = IPv6Address("0::")
+        else:
+            self.loopback_address = IPv4Address("0.0.0.0")
         self.internal_routing_loopback_config = ""
         self.route_maps = {}
         self.used_route_maps = set()
@@ -140,14 +145,20 @@ class Router:
                                                                                     interface_for_link)
             if not self.subnetworks_per_link.get(link["hostname"], False):
                 if link["hostname"] in my_as.hashset_routers:
-                    self.subnetworks_per_link[link["hostname"]] = my_as.ipv6_prefix.next_subnetwork_with_n_routers(2)
+                    if self.ip_version == 6: # todo : care
+                        self.subnetworks_per_link[link["hostname"]] = my_as.ipv6_prefix.next_subnetwork_with_n_routers(2)
+                    else:
+                        self.subnetworks_per_link[link["hostname"]] = my_as.ipv4_prefix.next_subnetwork_with_n_routers(2)
                     all_routers[link["hostname"]].subnetworks_per_link[self.hostname] = self.subnetworks_per_link[
                         link["hostname"]]
                 else:
                     self.passive_interfaces.add(self.interface_per_link[link["hostname"]])
-                    #print(link["hostname"], all_routers[link["hostname"]].AS_number)
-                    picked_transport_interface = SubNetwork(
-                        my_as.connected_AS_dict[all_routers[link["hostname"]].AS_number][1][self.hostname], 2)
+                    if self.ip_version == 6:
+                        picked_transport_interface = SubNetwork(
+                            my_as.connected_AS_dict[all_routers[link["hostname"]].AS_number][1][self.hostname], 2)
+                    else: # todo : check
+                        picked_transport_interface = SubNetwork(
+                            my_as.connected_AS_dict[all_routers[link["hostname"]].AS_number][1][self.hostname], 2)
                     self.subnetworks_per_link[link["hostname"]] = picked_transport_interface
                     all_routers[link["hostname"]].subnetworks_per_link[self.hostname] = picked_transport_interface
             elif link["hostname"] not in my_as.hashset_routers:
@@ -155,30 +166,61 @@ class Router:
             ip_address = self.subnetworks_per_link[link["hostname"]].get_ip_address_with_router_id(
                 self.subnetworks_per_link[link["hostname"]].get_next_router_id())
             self.ip_per_link[link["hostname"]] = ip_address
-            # print(self.interface_per_link.get(link["hostname"],interface))
+            
             if mode == "cfg":
-                extra_config = "\n!\n"
-                if my_as.internal_routing == "OSPF":
-                    if not link.get("ospf_cost", False):
-                        extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
-                    else:
-                        extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n ipv6 ospf cost {link["ospf_cost"]}\n!\n"
-                elif my_as.internal_routing == "RIP":
-                    extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
-                self.config_str_per_link[link[
-                    "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no ip address\n negotiation auto\n ipv6 address {str(ip_address)}/{self.subnetworks_per_link[link["hostname"]].start_of_free_spots * 16}\n ipv6 enable\n {extra_config}"
+                if self.ip_version == 6: # todo : a revoir
+                    # Configuration IPv6
+                    extra_config = "\n!\n"
+                    if my_as.internal_routing == "OSPF":
+                        if not link.get("ospf_cost", False):
+                            extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
+                        else:
+                            extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n ipv6 ospf cost {link["ospf_cost"]}\n!\n"
+                    elif my_as.internal_routing == "RIP":
+                        extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
+                    self.config_str_per_link[link[
+                        "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no ip address\n negotiation auto\n ipv6 address {str(ip_address)}/{self.subnetworks_per_link[link["hostname"]].start_of_free_spots * 16}\n ipv6 enable\n {extra_config}"
+                else:
+                    # Configuration IPv4
+                    extra_config = "\n!\n"
+                    if my_as.internal_routing == "OSPF":
+                        if not link.get("ospf_cost", False):
+                            extra_config = f"ip ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
+                        else:
+                            extra_config = f"ip ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n ip ospf cost {link["ospf_cost"]}\n!\n"
+                    elif my_as.internal_routing == "RIP":
+                        extra_config = f"ip rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
+                    # Pour IPv4, on utilise un masque de sous-réseau au lieu de la notation CIDR
+                    mask = "255.255.255.0"  # Masque par défaut, à ajuster selon le réseau
+                    self.config_str_per_link[link[
+                        "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no ipv6 address\n negotiation auto\n ip address {str(ip_address)} {mask}\n {extra_config}"
             elif mode == "telnet":
-                # todo : send commands
-                extra_config = ""
-                if my_as.internal_routing == "OSPF":
-                    if not link.get("ospf_cost", False):
-                        extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n"
-                    else:
-                        extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n ipv6 ospf cost {link["ospf_cost"]}\n"
-                elif my_as.internal_routing == "RIP":
-                    extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
-                self.config_str_per_link[link[
-                    "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ip address\nipv6 address {str(ip_address)}/{self.subnetworks_per_link[link["hostname"]].start_of_free_spots * 16}\n ipv6 enable\n{extra_config}\n exit\n"
+                if self.ip_version == 6: # todo: a revoir
+                    # Configuration IPv6 en mode telnet
+                    extra_config = ""
+                    if my_as.internal_routing == "OSPF":
+                        if not link.get("ospf_cost", False):
+                            extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n"
+                        else:
+                            extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n ipv6 ospf cost {link["ospf_cost"]}\n"
+                    elif my_as.internal_routing == "RIP":
+                        extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
+                    self.config_str_per_link[link[
+                        "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ip address\nipv6 address {str(ip_address)}/{self.subnetworks_per_link[link["hostname"]].start_of_free_spots * 16}\n ipv6 enable\n{extra_config}\n exit\n"
+                else:
+                    # Configuration IPv4 en mode telnet
+                    extra_config = ""
+                    if my_as.internal_routing == "OSPF":
+                        if not link.get("ospf_cost", False):
+                            extra_config = f"ip ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n"
+                        else:
+                            extra_config = f"ip ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n ip ospf cost {link["ospf_cost"]}\n"
+                    elif my_as.internal_routing == "RIP":
+                        extra_config = f"ip rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
+                    # Pour IPv4, on utilise un masque de sous-réseau au lieu de la notation CIDR
+                    mask = "255.255.255.0"  # Masque par défaut, à ajuster selon le réseau
+                    self.config_str_per_link[link[
+                        "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n exit\n"
         # print(f"LEN DE FOU : {self.ip_per_link}")
 
     def set_loopback_configuration_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"],
@@ -196,16 +238,26 @@ class Router:
         self.loopback_address = my_as.loopback_prefix.get_ip_address_with_router_id(router_id)
         if my_as.internal_routing == "OSPF":
             if mode == "cfg":
-                self.internal_routing_loopback_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
+                if self.ip_version == 6: # todo : a revoir
+                    self.internal_routing_loopback_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
+                else:
+                    self.internal_routing_loopback_config = f"ip ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
             elif mode == "telnet":
-                # todo : telnet command
-                self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\nno ip address\nipv6 enable\nipv6 address {self.loopback_address}/128\nipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n"
+                if self.ip_version == 6: # todo : a revoir
+                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\nno ip address\nipv6 enable\nipv6 address {self.loopback_address}/128\nipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n"
+                else:
+                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\nno ipv6 address\nip address {self.loopback_address} 255.255.255.255\nip ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n"
         elif my_as.internal_routing == "RIP":
             if mode == "cfg":
-                self.internal_routing_loopback_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
+                if self.ip_version == 6: # todo : a revoir
+                    self.internal_routing_loopback_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
+                else:
+                    self.internal_routing_loopback_config = f"ip rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
             elif mode == "telnet":
-                # todo : telnet command
-                self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\nno ip address\nipv6 enable\nipv6 address {self.loopback_address}/128\nipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
+                if self.ip_version == 6: # todo : a revoir
+                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\nno ip address\nipv6 enable\nipv6 address {self.loopback_address}/128\nipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
+                else:
+                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\nno ipv6 address\nip address {self.loopback_address} 255.255.255.255\nip rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
 
     def set_bgp_config_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"], mode: str):
         """
