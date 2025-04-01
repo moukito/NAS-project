@@ -206,7 +206,7 @@ class Router:
                     elif my_as.internal_routing == "RIP":
                         extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
                     self.config_str_per_link[link[
-                        "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ip address\nipv6 address {str(ip_address)}/{self.subnetworks_per_link[link["hostname"]].start_of_free_spots * 16}\n ipv6 enable\n{extra_config}\n exit\n"
+                        "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ip address\n ipv6 address {str(ip_address)}/{self.subnetworks_per_link[link["hostname"]].start_of_free_spots * 16}\n ipv6 enable\n {extra_config} exit\n"
                 else:
                     # Configuration IPv4 en mode telnet
                     extra_config = ""
@@ -218,7 +218,7 @@ class Router:
                     elif my_as.internal_routing == "RIP":
                         extra_config = f"ip rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
                     # Pour IPv4, on utilise un masque de sous-réseau au lieu de la notation CIDR
-                    mask = "255.255.255.0"  # Masque par défaut, à ajuster selon le réseau
+                    mask = "255.255.255.0"  # todo : Masque par défaut, à ajuster selon le réseau
                     self.config_str_per_link[link[
                         "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n exit\n"
         # print(f"LEN DE FOU : {self.ip_per_link}")
@@ -244,9 +244,9 @@ class Router:
                     self.internal_routing_loopback_config = f"ip ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
             elif mode == "telnet":
                 if self.ip_version == 6: # todo : a revoir
-                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\nno ip address\nipv6 enable\nipv6 address {self.loopback_address}/128\nipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n"
+                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ip address\n ipv6 enable\n ipv6 address {self.loopback_address}/128\n ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n"
                 else:
-                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\nno ipv6 address\nip address {self.loopback_address} 255.255.255.255\nip ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n"
+                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ipv6 address\n ip address {self.loopback_address} 255.255.255.255\n ip ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n"
         elif my_as.internal_routing == "RIP":
             if mode == "cfg":
                 if self.ip_version == 6: # todo : a revoir
@@ -255,9 +255,9 @@ class Router:
                     self.internal_routing_loopback_config = f"ip rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
             elif mode == "telnet":
                 if self.ip_version == 6: # todo : a revoir
-                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\nno ip address\nipv6 enable\nipv6 address {self.loopback_address}/128\nipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
+                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ip address\n ipv6 enable\n ipv6 address {self.loopback_address}/128\n ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
                 else:
-                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\nno ipv6 address\nip address {self.loopback_address} 255.255.255.255\nip rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
+                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ipv6 address\n ip address {self.loopback_address} 255.255.255.255\n ip rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
 
     def set_bgp_config_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"], mode: str):
         """
@@ -276,7 +276,10 @@ class Router:
             # todo : telnet commands
             self.config_bgp = f"router bgp {self.AS_number}\nbgp router-id {self.router_id}.{self.router_id}.{self.router_id}.{self.router_id}\n"
             config_address_family = ""
-            config_neighbors_ibgp = "address-family ipv6 unicast\n"
+            if my_as.ip_version == 6:
+                config_neighbors_ibgp = "address-family ipv6 unicast\n"
+            else:
+                config_neighbors_ibgp = "bgp log-neighbor-changes\nno bgp default ipv4-unicast\naddress-family ipv4 unicast\n"
             for voisin_ibgp in self.voisins_ibgp:
                 remote_ip = all_routers[voisin_ibgp].loopback_address
                 config_neighbors_ibgp += f"neighbor {remote_ip} remote-as {self.AS_number}\nneighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n"
@@ -290,7 +293,10 @@ class Router:
                 if my_as.connected_AS_dict[remote_as][0] != "client":
                     config_address_family += f"neighbor {remote_ip} route-map General-OUT out\n"
                 self.used_route_maps.add(remote_as)
-            config_address_family += f"network {self.loopback_address}/128\n"
+            if my_as.ip_version == 6:
+                config_address_family += f"network {self.loopback_address}/128\n"
+            else:
+                config_address_family += f"network {self.loopback_address} mask 255.255.255.255\n"
             config_address_family += f"exit\nexit\nexit\n"
             self.config_bgp += config_neighbors_ibgp
             self.config_bgp += config_neighbors_ebgp
