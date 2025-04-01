@@ -17,6 +17,7 @@
   "Les_routeurs": [
     {
       "hostname": "PE1",
+      "type": "Provider Edge",
       "links": [
         {
           "type": "Provider",
@@ -27,6 +28,7 @@
     },
     {
       "hostname": "P1",
+      "type": "Provider",
       "links": [
         {
           "type": "Provider",
@@ -41,6 +43,7 @@
     },
     {
         "hostname": "P2",
+        "type": "Provider",
         "links": [
           {
             "type": "Provider",
@@ -55,6 +58,7 @@
       },
       {
         "hostname": "PE2",
+        "type": "Provider Edge",
         "links": [
           {
             "type": "Provider",
