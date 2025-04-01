@@ -6,8 +6,9 @@ from ipaddress import IPv6Address
 
 
 class Router:
-    def __init__(self, hostname: str, links, AS_number: int, position=None):
+    def __init__(self, hostname: str, router_type: str, links: list[dict], AS_number: int, position=None):
         self.hostname = hostname
+        self.type = router_type
         self.links = links
         self.AS_number = AS_number
         self.passive_interfaces = set()
@@ -155,7 +156,7 @@ class Router:
             ip_address = self.subnetworks_per_link[link["hostname"]].get_ip_address_with_router_id(
                 self.subnetworks_per_link[link["hostname"]].get_next_router_id())
             self.ip_per_link[link["hostname"]] = ip_address
-            # print(self.interface_per_link.get(link["hostname"],interface))
+            
             if mode == "cfg":
                 extra_config = "\n!\n"
                 if my_as.internal_routing == "OSPF":
@@ -167,19 +168,23 @@ class Router:
                     extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
                 self.config_str_per_link[link[
                     "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no ip address\n negotiation auto\n ipv6 address {str(ip_address)}/{self.subnetworks_per_link[link["hostname"]].start_of_free_spots * 16}\n ipv6 enable\n {extra_config}"
+                # todo: add LDP config for every interface
             elif mode == "telnet":
-                # todo : send commands
                 extra_config = ""
                 if my_as.internal_routing == "OSPF":
                     if not link.get("ospf_cost", False):
                         extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n"
                     else:
                         extra_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n ipv6 ospf cost {link["ospf_cost"]}\n"
+                    extra_config += ""
                 elif my_as.internal_routing == "RIP":
                     extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
+                # LDP commands for every interface
+                ldp_config = ""
+                if self.type in ("Provider", "Provider Edge"):
+                    ldp_config += " mpls ip\n mpls ldp enable\n"
                 self.config_str_per_link[link[
-                    "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ip address\nipv6 address {str(ip_address)}/{self.subnetworks_per_link[link["hostname"]].start_of_free_spots * 16}\n ipv6 enable\n{extra_config}\n exit\n"
-        # print(f"LEN DE FOU : {self.ip_per_link}")
+                    "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ip address\nipv6 address {str(ip_address)}/{self.subnetworks_per_link[link["hostname"]].start_of_free_spots * 16}\n ipv6 enable\n{extra_config}\n{ldp_config} exit\n"
 
     def set_loopback_configuration_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"],
                                         mode: str):
@@ -281,3 +286,11 @@ router bgp {self.AS_number}
             connector.update_node_position(self.hostname, self.position["x"], self.position["y"])
         except Exception as e:
             print(f"Error updating position for {self.hostname}: {e}")
+
+    def set_ldp_config_data(self, mode: str):
+        if mode == "telnet":
+            config_ldp = f"mpls ip\nmpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
+        elif mode == "cfg":
+            #todo
+            pass
+        
