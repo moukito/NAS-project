@@ -88,17 +88,15 @@ def get_final_config_string(AS: AS, router: "Router", mode: str):
 	
 	# Sélectionner la configuration unicast appropriée selon la version IP
 	if router.ip_version == 6: # todo : a revoir
-		unicast_config = "no ip domain lookup\nipv6 unicast-routing\nipv6 cef"
+		unicast_config = IPV6_UNICAST_STRING
 		loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ip address\n negotiation auto\n ipv6 enable\n ipv6 address {router.loopback_address}/128\n {router.internal_routing_loopback_config}"
 		forward_protocol = "ip forward-protocol nd"
 	else:
-		unicast_config = "no ip domain lookup\nip routing\nip cef"
+		unicast_config = IPV4_UNICAST_STRING
 		loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ipv6 address\n negotiation auto\n ip address {router.loopback_address} 255.255.255.255\n {router.internal_routing_loopback_config}"
 		forward_protocol = "ip forward-protocol nd"
 	
 	return f"""!
-!
-!
 !
 !
 !
@@ -126,6 +124,8 @@ ip cef
 !
 !
 multilink bundle-name authenticated
+!
+!
 !
 !
 !
@@ -198,39 +198,68 @@ def get_all_telnet_commands(AS:AS, router:"Router"):
 	entrées : AS: Autonomous System et router un Router
 	sortie : liste de str de commandes telnet à exécuter telles quelles sur une session telnet ouverte du routeur correspondant dans le projet GNS3 voulu
 	"""
-	community_list_setup = AS.full_community_lists.split("\n")
-	liste_raw = AS.global_route_map_out.split("\n")
-	if len(liste_raw) > 3:
-		route_maps_setup = liste_raw[:len(liste_raw) - 3] + ["exit"] + [liste_raw[-3]] + ["exit"]
-	else:
-		route_maps_setup = [AS.global_route_map_out.split("\n")[0]] + ["exit"]
+	commands = ["enable", "configure terminal"]
 	
+	# Configuration unicast selon la version IP
+	if router.ip_version == 6:
+		commands.append("no ip domain lookup")
+		commands.append("ipv6 unicast-routing")
+		commands.append("ipv6 cef")
+	else:
+		commands.append("no ip domain lookup")
+		commands.append("ip routing")
+		commands.append("ip cef")
+	
+	# Configuration des interfaces
+	for config_string in router.config_str_per_link.values():
+		commands.append(config_string)
+	
+	# Configuration du loopback
+	commands.append(router.internal_routing_loopback_config)
+	
+	# Configuration du routage interne
 	if AS.internal_routing == "OSPF":
-		internal_routing = get_ospf_config_string(AS, router).split("\n") + ["exit"]
-	else:
-		internal_routing = get_rip_config_string(AS, router).split("\n") + ["exit"]
+		if router.ip_version == 6:
+			commands.append(f"ipv6 router ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT}")
+			commands.append(f"router-id {router.router_id}.{router.router_id}.{router.router_id}.{router.router_id}")
+			for passive in router.passive_interfaces:
+				commands.append(f"passive-interface {passive}")
+			commands.append("exit")
+		else:
+			commands.append(f"router ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT}")
+			commands.append(f"router-id {router.router_id}.{router.router_id}.{router.router_id}.{router.router_id}")
+			for passive in router.passive_interfaces:
+				commands.append(f"passive-interface {passive}")
+			commands.append("exit")
+	elif AS.internal_routing == "RIP":
+		if router.ip_version == 6:
+			commands.append(f"ipv6 router rip {NOM_PROCESSUS_IGP_PAR_DEFAUT}")
+			commands.append("exit")
+		else:
+			commands.append("router rip")
+			commands.append("version 2")
+			for passive in router.passive_interfaces:
+				commands.append(f"passive-interface {passive}")
+			commands.append("exit")
 	
-	bgp_setup = router.config_bgp.split("\n")
-	loopback_setup = router.internal_routing_loopback_config.split("\n") + ["exit"]
+	# Configuration BGP
+	commands.append(router.config_bgp)
+	
+	# Configuration des route-maps et community-lists
+	for line in AS.full_community_lists.split("\n"):
+		if line.strip() != "":
+			commands.append(line)
 	
 	for autonomous in router.used_route_maps:
-		route_maps_setup += AS.community_data[autonomous]["route_map_in"].split("\n")
-		route_maps_setup += ["exit"]
-		
-	interface_configs = []
-	for interface in router.config_str_per_link.values():
-		interface_configs += interface.split("\n")
+		for line in AS.community_data[autonomous]["route_map_in"].split("\n"):
+			if line.strip() != "":
+				commands.append(line)
 	
-	# Configuration initiale selon la version IP
-	if router.ip_version == 6: # todo : a revoir
-		initial_config = ["config t", "ip bgp-community new-format", "ipv6 unicast-routing"]
-	else:
-		initial_config = ["config t", "ip bgp-community new-format", "ip routing"]
+	for line in AS.global_route_map_out.split("\n"):
+		if line.strip() != "":
+			commands.append(line)
 	
-	final = (initial_config + community_list_setup + route_maps_setup + internal_routing + loopback_setup + interface_configs + bgp_setup)
-	for commande in list(final):
-		if "!" in commande:
-			final.remove(commande)
-		elif commande == "":
-			final.remove(commande)
-	return final
+	commands.append("end")
+	commands.append("write memory")
+	
+	return commands
