@@ -8,7 +8,7 @@ from ipaddress import IPv6Address, IPv4Address, IPv6Network, IPv4Network
 class Router:
     def __init__(self, hostname: str, router_type: str, links: list[dict], AS_number: int, position=None, ip_version: int = 6):
         self.hostname = hostname
-        self.type = router_type
+        self.router_type = router_type
         self.links = links
         self.AS_number = AS_number
         self.ip_version = ip_version
