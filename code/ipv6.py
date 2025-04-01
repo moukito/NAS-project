@@ -81,7 +81,6 @@ def list_of_ints_into_ipv4_address(ints:list[int]) -> IPv4Address:
     entrée : liste d'entiers (généralement les 4 derniers de la liste complète)
     sortie : address IPv4 unicast
     """
-    # Pour IPv4, on utilise généralement les 4 derniers octets
     used_ints = ints[-4:] if len(ints) > 4 else ints
     final_string = ""
     for i in range(len(used_ints) - 1):
