@@ -8,7 +8,7 @@ from ipaddress import IPv6Address
 class Router:
     def __init__(self, hostname: str, router_type: str, links: list[dict], AS_number: int, position=None):
         self.hostname = hostname
-        self.type = router_type
+        self.router_type = router_type
         self.links = links
         self.AS_number = AS_number
         self.passive_interfaces = set()
@@ -179,10 +179,15 @@ class Router:
                     extra_config += ""
                 elif my_as.internal_routing == "RIP":
                     extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
+                
                 # LDP commands for every interface
                 ldp_config = ""
-                if self.interface_per_link[link["type"]] in ("Provider", "Provider Edge"):
+                if all_routers[self.interface_per_link.get(link["hostname"])].router_type in ("Provider", "Provider Edge") and self.type in ("Provider", "Provider Edge"):
                     ldp_config += " mpls ip\n mpls ldp enable\n"
+                
+                # VRF commands for every interface
+                vrf_config = ""
+                
                 self.config_str_per_link[link[
                     "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ip address\nipv6 address {str(ip_address)}/{self.subnetworks_per_link[link["hostname"]].start_of_free_spots * 16}\n ipv6 enable\n{extra_config}\n{ldp_config} exit\n"
 
