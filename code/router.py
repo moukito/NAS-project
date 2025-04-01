@@ -1,6 +1,6 @@
 from GNS3 import Connector
 from autonomous_system import AS
-from ipv6 import SubNetwork
+from network import SubNetwork
 from writer import LINKS_STANDARD, NOM_PROCESSUS_IGP_PAR_DEFAUT, STANDARD_LOOPBACK_INTERFACE
 from ipaddress import IPv6Address, IPv4Address, IPv6Network, IPv4Network
 

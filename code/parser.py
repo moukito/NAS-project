@@ -2,7 +2,7 @@ import ipaddress
 import json
 
 from autonomous_system import AS, GlobalRouterIDCounter
-from ipv6 import SubNetwork
+from network import SubNetwork
 from router import Router
 from writer import get_final_config_string
 
@@ -50,18 +50,18 @@ def parse_intent_file(file_path: str) -> tuple[list[AS], list[Router]]:
             if ip_version == 6: # todo : care
                 ip = SubNetwork(ipaddress.IPv6Network(autonomous["ipv6_prefix"]), len(routers))
                 ipv4_prefix = None
+                # Traitement du préfixe loopback pour IPv6
+                loopback_prefix = SubNetwork(ipaddress.IPv6Network(autonomous["loopback_prefix"]), len(routers))
             else:
                 ip = None # SubNetwork(ipaddress.IPv6Network(autonomous.get("ipv6_prefix", "2001:db8::/64")), len(routers))
                 ipv4_prefix = SubNetwork(ipaddress.IPv4Network(autonomous["ipv4_prefix"]), len(routers))
+                # Traitement du préfixe loopback pour IPv4
+                loopback_prefix = SubNetwork(ipaddress.IPv4Network(autonomous["ipv4_loopback_prefix"]), len(routers))
             
             internal_routing = autonomous["internal_routing"]
-            connected_as = autonomous["connected_AS"]
             
-            # Traitement du préfixe loopback selon la version IP
-            if ip_version == 6:
-                loopback_prefix = SubNetwork(ipaddress.IPv6Network(autonomous["loopback_prefix"]), len(routers))
-            else:
-                loopback_prefix = SubNetwork(ipaddress.IPv4Network(autonomous["ipv4_loopback_prefix"]), len(routers))
+            # Gestion des AS connectés selon la version IP
+            connected_as = autonomous.get("connected_AS", [])
             
             les_as.append(AS(ip, as_number, routers, internal_routing, connected_as, loopback_prefix, 
                            global_counter, ip_version, ipv4_prefix))
