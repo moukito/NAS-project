@@ -181,7 +181,7 @@ class Router:
                     extra_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
                 # LDP commands for every interface
                 ldp_config = ""
-                if self.type in ("Provider", "Provider Edge"):
+                if self.interface_per_link[link["type"]] in ("Provider", "Provider Edge"):
                     ldp_config += " mpls ip\n mpls ldp enable\n"
                 self.config_str_per_link[link[
                     "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ip address\nipv6 address {str(ip_address)}/{self.subnetworks_per_link[link["hostname"]].start_of_free_spots * 16}\n ipv6 enable\n{extra_config}\n{ldp_config} exit\n"
@@ -289,7 +289,7 @@ router bgp {self.AS_number}
 
     def set_ldp_config_data(self, mode: str):
         if mode == "telnet":
-            config_ldp = f"mpls ip\nmpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
+            config_ldp = f"mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
         elif mode == "cfg":
             #todo
             pass
