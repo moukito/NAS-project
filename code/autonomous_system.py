@@ -1,5 +1,5 @@
 from ipaddress import IPv6Address, IPv6Network, IPv4Address, IPv4Network
-from ipv6 import SubNetwork
+from network import SubNetwork
 
 
 class GlobalRouterIDCounter:
