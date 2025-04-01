@@ -1,0 +1,67 @@
+{
+  "ip_version": 4,
+  "Les_AS": [
+    {
+      "ipv4_prefix": "192.168.1.0/24",
+      "AS_number": 111,
+      "routers": [
+        "PE1",
+        "PE2",
+        "P1",
+        "P2"
+      ],
+      "internal_routing": "OSPF",
+      "ipv4_loopback_prefix": "10.1.1.0/24"
+    }
+  ],
+  "Les_routeurs": [
+    {
+      "hostname": "PE1",
+      "links": [
+        {
+          "type": "Provider",
+          "hostname": "P1"
+        }
+      ],
+      "AS_number": 111
+    },
+    {
+      "hostname": "P1",
+      "links": [
+        {
+          "type": "Provider",
+          "hostname": "P2"
+        },
+        {
+            "type": "Provider Edge",
+            "hostname": "PE1"
+        }
+      ],
+      "AS_number": 111
+    },
+    {
+        "hostname": "P2",
+        "links": [
+          {
+            "type": "Provider",
+            "hostname": "P1"
+          },
+          {
+              "type": "Provider Edge",
+              "hostname": "PE2"
+          }
+        ],
+        "AS_number": 111
+      },
+      {
+        "hostname": "PE2",
+        "links": [
+          {
+            "type": "Provider",
+            "hostname": "P2"
+          }
+        ],
+        "AS_number": 111
+      }
+  ]
+}
