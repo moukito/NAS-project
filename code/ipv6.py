@@ -1,11 +1,12 @@
-from ipaddress import IPv6Address, IPv6Network
+from ipaddress import IPv6Address, IPv6Network, IPv4Address, IPv4Network
 
 class SubNetwork:
-    def __init__(self, network_address:IPv6Network, number_of_routers:int = 0, last_router_id:int = 0):
+    def __init__(self, network_address, number_of_routers:int = 0, last_router_id:int = 0):
         self.network_address = network_address
         self.number_of_routers = number_of_routers
         self.assigned_router_ids = last_router_id
         self.assigned_sub_networks = 0
+        self.is_ipv6 = isinstance(network_address, IPv6Network)
         self.list_ip, self.start_of_free_spots = str_network_into_list(network_address)
         
     def __str__(self):
@@ -20,16 +21,19 @@ class SubNetwork:
         """
         self.assigned_router_ids += 1
         return self.assigned_router_ids
-    def get_ip_address_with_router_id(self, router_id:int) -> IPv6Address:
+    def get_ip_address_with_router_id(self, router_id:int):
         """
-        Renvoie l'addresse IPv6 lien global unicast à assigner au routeur d'id router_id
+        Renvoie l'addresse IPv6 ou IPv4 à assigner au routeur d'id router_id
 
         entrée : self (méthode) et un entier positif de router id
-        sortie : une addresse IPv6 unicast lien global valide
+        sortie : une addresse IPv6 ou IPv4 unicast valide selon le type de réseau
         """
         list_copy = [self.list_ip[i] for i in range(len(self.list_ip))]
         list_copy[-1] = router_id
-        return list_of_ints_into_ipv6_address(list_copy)
+        if self.is_ipv6:
+            return list_of_ints_into_ipv6_address(list_copy)
+        else:
+            return list_of_ints_into_ipv4_address(list_copy)
     def next_subnetwork_with_n_routers(self, routers:int):
         """
         Returns a new subnetwork with an address inside the network this is executed on
@@ -69,6 +73,21 @@ def list_of_ints_into_ipv6_address(ints:list[int]) -> IPv6Address:
         final_string += f"{hex(ints[i]).split("x")[1]}:"
     final_string += f"{hex(ints[-1]).split("x")[1]}"
     return IPv6Address(final_string)
+
+def list_of_ints_into_ipv4_address(ints:list[int]) -> IPv4Address:
+    """
+    transforme une liste de 4 entiers positifs représentables sur 8 bits en une addresse IPv4 unicast
+
+    entrée : liste d'entiers (généralement les 4 derniers de la liste complète)
+    sortie : address IPv4 unicast
+    """
+    # Pour IPv4, on utilise généralement les 4 derniers octets
+    used_ints = ints[-4:] if len(ints) > 4 else ints
+    final_string = ""
+    for i in range(len(used_ints) - 1):
+        final_string += f"{used_ints[i]}."
+    final_string += f"{used_ints[-1]}"
+    return IPv4Address(final_string)
 
 def str_network_into_list(network_address:IPv6Network) -> tuple[list[int], int]:
     """
