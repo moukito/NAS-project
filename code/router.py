@@ -125,8 +125,7 @@ class Router:
                 else:
                     raise KeyError("Le routeur cible n'a pas de lien dans l'autre sens")
 
-    def set_interface_configuration_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"],
-                                         mode: str):
+    def set_interface_configuration_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"], mode: str):
         """
         Génère les string de configuration par lien pour le routeur self
 
@@ -135,36 +134,71 @@ class Router:
         """
         my_as = autonomous_systems[self.AS_number]
 
+        if not hasattr(my_as, 'subnet_counter'):
+            my_as.subnet_counter = 0
+
         for link in self.links:
             if not self.interface_per_link.get(link["hostname"], False):
                 interface_for_link = self.available_interfaces.pop(0)
             else:
-                interface_for_link = "FastEthernet2019857/0"
+                interface_for_link = self.interface_per_link[link["hostname"]]
 
-            self.interface_per_link[link["hostname"]] = self.interface_per_link.get(link["hostname"],
-                                                                                    interface_for_link)
+            self.interface_per_link[link["hostname"]] = interface_for_link
+
             if not self.subnetworks_per_link.get(link["hostname"], False):
                 if link["hostname"] in my_as.hashset_routers:
-                    if self.ip_version == 6: # todo : care
-                        self.subnetworks_per_link[link["hostname"]] = my_as.ipv6_prefix.next_subnetwork_with_n_routers(2)
-                    else:
-                        self.subnetworks_per_link[link["hostname"]] = my_as.ipv4_prefix.next_subnetwork_with_n_routers(2)
-                    all_routers[link["hostname"]].subnetworks_per_link[self.hostname] = self.subnetworks_per_link[
-                        link["hostname"]]
+                    # Créer un sous-réseau unique pour ce lien si aucun n'existe déjà
+                    if self.hostname < link["hostname"]: # Le routeur avec le "nom alphabétiquement inférieur" crée le sous-réseau
+                        if self.ip_version == 6:
+                            subnet = my_as.ipv6_prefix.next_subnetwork_with_n_routers(2)
+                        else:
+                            my_as.subnet_counter += 1
+                            base_network = my_as.ipv4_prefix.network_address.network_address
+
+                            subnet_size = 4
+
+                            new_network_int = int(base_network) + (my_as.subnet_counter - 1) * subnet_size
+                            new_network = IPv4Network(f"{IPv4Address(new_network_int)}/30", strict=False)
+
+                            subnet = SubNetwork(new_network, 2)
+                        self.subnetworks_per_link[link["hostname"]] = subnet
+                        all_routers[link["hostname"]].subnetworks_per_link[self.hostname] = subnet
                 else:
+                    # Traitement pour les liens vers d'autres AS...
                     self.passive_interfaces.add(self.interface_per_link[link["hostname"]])
                     if self.ip_version == 6:
                         picked_transport_interface = SubNetwork(
                             my_as.connected_AS_dict[all_routers[link["hostname"]].AS_number][1][self.hostname], 2)
-                    else: # todo : check
+                    else:
                         picked_transport_interface = SubNetwork(
                             my_as.connected_AS_dict[all_routers[link["hostname"]].AS_number][1][self.hostname], 2)
                     self.subnetworks_per_link[link["hostname"]] = picked_transport_interface
                     all_routers[link["hostname"]].subnetworks_per_link[self.hostname] = picked_transport_interface
             elif link["hostname"] not in my_as.hashset_routers:
                 self.passive_interfaces.add(self.interface_per_link[link["hostname"]])
-            ip_address = self.subnetworks_per_link[link["hostname"]].get_ip_address_with_router_id(
-                self.subnetworks_per_link[link["hostname"]].get_next_router_id())
+
+            if not self.subnetworks_per_link.get(link["hostname"], False):
+                return 0
+
+            if self.ip_version == 6:
+                if self.hostname < link["hostname"]:
+                    router_id = 1
+                else:
+                    router_id = 2
+                ip_address = self.subnetworks_per_link[link["hostname"]].get_ip_address_with_router_id(router_id)
+            else:
+                if self.hostname < link["hostname"]:
+                    router_id = 1
+                else:
+                    router_id = 2
+                subnet = self.subnetworks_per_link[link["hostname"]].network_address
+                network_addr = int(subnet.network_address)
+
+                # Attribuer .1 ou .2 selon l'ID du routeur
+                ip_address = IPv4Address(network_addr + router_id)
+
+                mask = subnet.netmask
+            print(f"ROUTER {self.hostname}, NEIGHBOR {link}, INTERFACE {self.interface_per_link.get(link["hostname"])}, IP ADDRESS : {ip_address}")
             self.ip_per_link[link["hostname"]] = ip_address
             
             if mode == "cfg":
@@ -218,10 +252,9 @@ class Router:
                     elif my_as.internal_routing == "RIP":
                         extra_config = f"ip rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
                     # Pour IPv4, on utilise un masque de sous-réseau au lieu de la notation CIDR
-                    mask = "255.255.255.0"  # todo : Masque par défaut, à ajuster selon le réseau
-                    self.config_str_per_link[link[
-                        "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n exit\n"
-        # print(f"LEN DE FOU : {self.ip_per_link}")
+                    mask = str(self.subnetworks_per_link[link["hostname"]].network_address.netmask)  # todo : Masque par défaut, à ajuster selon le réseau
+                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n exit\n"
+        return 1
 
     def set_loopback_configuration_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"],
                                         mode: str):
