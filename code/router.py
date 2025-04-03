@@ -252,7 +252,7 @@ class Router:
                     elif my_as.internal_routing == "RIP":
                         extra_config = f"ip rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
                     # Pour IPv4, on utilise un masque de sous-réseau au lieu de la notation CIDR
-                    mask = str(self.subnetworks_per_link[link["hostname"]].network_address.netmask)  # todo : Masque par défaut, à ajuster selon le réseau
+                    mask = str(self.subnetworks_per_link[link["hostname"]].network_address.netmask)
                     self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n exit\n"
         return 1
 
