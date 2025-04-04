@@ -36,8 +36,7 @@ class TestSubNetwork(unittest.TestCase):
 
     def test_multiple_subnetworks(self):
         # Test de génération de plusieurs sous-réseaux
-        ipv4_network = int(IPv4Network("192.168.1.0/24").network_address)
-        print(ipv4_network)
+        ipv4_network = IPv4Network("192.168.1.0/24")
         subnet = SubNetwork(ipv4_network)
 
         # Génération de 3 sous-réseaux consécutifs
