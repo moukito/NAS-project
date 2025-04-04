@@ -45,9 +45,6 @@ no shutdown
 enable
 conf t
 router bgp [as_numberPE]
- bgp log-neighbor-changes
- neighbor [loopackAutrePE] remote-as [as_numberPE]
- neighbor [loopackAutrePE] update-source Loopback0
  address-family vpnv4
  neighbor [loopackAutrePE] activate
  neighbor [loopackAutrePE] send-community both
