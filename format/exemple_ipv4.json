@@ -17,7 +17,7 @@
   "Les_routeurs": [
     {
       "hostname": "PE1",
-      "router_type": "Provider Edge",
+      "type": "Provider Edge",
       "links": [
         {
           "type": "Provider",
@@ -28,44 +28,44 @@
     },
     {
       "hostname": "P1",
-      "router_type": "Provider",
+      "type": "Provider",
       "links": [
         {
-          "router_type": "Provider",
+          "type": "Provider",
           "hostname": "P2"
         },
         {
-            "router_type": "Provider Edge",
+            "type": "Provider Edge",
             "hostname": "PE1"
         }
       ],
       "AS_number": 111
     },
     {
-        "hostname": "P2",
-        "router_type": "Provider",
-        "links": [
-          {
-            "router_type": "Provider",
-            "hostname": "P1"
-          },
-          {
-              "router_type": "Provider Edge",
-              "hostname": "PE2"
-          }
-        ],
-        "AS_number": 111
-      },
-      {
-        "hostname": "PE2",
-        "router_type": "Provider Edge",
-        "links": [
-          {
-            "router_type": "Provider",
-            "hostname": "P2"
-          }
-        ],
-        "AS_number": 111
-      }
+      "hostname": "P2",
+      "type": "Provider",
+      "links": [
+        {
+          "type": "Provider",
+          "hostname": "P1"
+        },
+        {
+            "type": "Provider Edge",
+            "hostname": "PE2"
+        }
+      ],
+      "AS_number": 111
+    },
+    {
+      "hostname": "PE2",
+      "type": "Provider Edge",
+      "links": [
+        {
+          "type": "Provider",
+          "hostname": "P2"
+        }
+      ],
+      "AS_number": 111
+    }
   ]
 }
