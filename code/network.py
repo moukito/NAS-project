@@ -174,8 +174,8 @@ def list_of_ints_into_ipv6_address(ints: list[int]) -> IPv6Address:
     """
     final_string = ""
     for i in range(len(ints) - 1):
-        final_string += f"{hex(ints[i]).split("x")[1]}:"
-    final_string += f"{hex(ints[-1]).split("x")[1]}"
+        final_string += f"{hex(ints[i]).split('x')[1]}:"
+    final_string += f"{hex(ints[-1]).split('x')[1]}"
     return IPv6Address(final_string)
 
 
