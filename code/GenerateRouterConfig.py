@@ -77,9 +77,16 @@ def main(mode: str, file: str) -> None:
 	for router in les_routers:
 		router.create_router_if_missing(connector)
 		router.update_router_position(connector)
+
+	todo = list()
 	for router in les_routers:
 		router.cleanup_used_interfaces(as_dico, router_dico, connector)
-		router.set_interface_configuration_data(as_dico, router_dico, mode)
+		if not router.set_interface_configuration_data(as_dico, router_dico, mode):
+			todo.append(router)
+	while len(todo) > 0:
+		router = todo.pop(0)
+		if not router.set_interface_configuration_data(as_dico, router_dico, mode):
+			todo.append(router)
 	for router in les_routers:
 		router.set_loopback_configuration_data(as_dico, router_dico, mode)
 		router.create_missing_links(as_dico, router_dico, connector)

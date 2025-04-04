@@ -2,12 +2,13 @@ import ipaddress
 import json
 
 from autonomous_system import AS, GlobalRouterIDCounter
-from ipv6 import SubNetwork
+from network import SubNetwork
 from router import Router
 from writer import get_final_config_string
 
 AS_LIST_NAME = "Les_AS"
 ROUTER_LIST_NAME = "Les_routeurs"
+IP_VERSION_KEY = "ip_version"
 
 
 def router_list_into_hostname_dictionary(router_list: list[Router]) -> dict[str, Router]:
@@ -35,21 +36,42 @@ def parse_intent_file(file_path: str) -> tuple[list[AS], list[Router]]:
     """
     with open(file_path, "r") as file:
         data = json.load(file)
+        
+        # Récupérer la version IP (par défaut IPv6 si non spécifiée)
+        ip_version = data.get(IP_VERSION_KEY, 6)
+        
         les_as = []
         global_counter = GlobalRouterIDCounter()
         for autonomous in data[AS_LIST_NAME]:
             as_number = autonomous["AS_number"]
             routers = autonomous["routers"]
-            ip = SubNetwork(ipaddress.IPv6Network(autonomous["ipv6_prefix"]), len(routers))
+            
+            # Traitement selon la version IP
+            if ip_version == 6: # todo : care
+                ip = SubNetwork(ipaddress.IPv6Network(autonomous["ipv6_prefix"]), len(routers))
+                ipv4_prefix = None
+                # Traitement du préfixe loopback pour IPv6
+                loopback_prefix = SubNetwork(ipaddress.IPv6Network(autonomous["loopback_prefix"]), len(routers))
+            else:
+                ip = None # SubNetwork(ipaddress.IPv6Network(autonomous.get("ipv6_prefix", "2001:db8::/64")), len(routers))
+                ipv4_prefix = SubNetwork(ipaddress.IPv4Network(autonomous["ipv4_prefix"]), len(routers))
+                # Traitement du préfixe loopback pour IPv4
+                loopback_prefix = SubNetwork(ipaddress.IPv4Network(autonomous["ipv4_loopback_prefix"]), len(routers))
+            
             internal_routing = autonomous["internal_routing"]
-            connected_as = autonomous["connected_AS"]
-            loopback_prefix = SubNetwork(ipaddress.IPv6Network(autonomous["loopback_prefix"]), len(routers))
-            les_as.append(AS(ip, as_number, routers, internal_routing, connected_as, loopback_prefix, global_counter))
+            
+            # Gestion des AS connectés selon la version IP
+            connected_as = autonomous.get("connected_AS", [])
+            
+            les_as.append(AS(ip, as_number, routers, internal_routing, connected_as, loopback_prefix, 
+                           global_counter, ip_version, ipv4_prefix))
+        
         les_routers = []
         for router in data[ROUTER_LIST_NAME]:
             hostname = router["hostname"]
             links = router["links"]
             as_number = router["AS_number"]
             position = router.get("position", {"x": 0, "y": 0})
-            les_routers.append(Router(hostname, links, as_number, position))
+            les_routers.append(Router(hostname, links, as_number, position, ip_version))
+        
         return (les_as, les_routers)
