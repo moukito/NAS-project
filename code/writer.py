@@ -20,7 +20,7 @@ route-map tag_pref_peer permit 10
 route-map tag_pref_customer permit 10
  set local-preference 300
 """
-STANDARD_LOOPBACK_INTERFACE = "Loopback1"
+STANDARD_LOOPBACK_INTERFACE = "Loopback0"
 
 def get_ospf_config_string(AS, router):
 	"""
@@ -228,6 +228,11 @@ def get_all_telnet_commands(AS:AS, router:"Router"):
 		commands.append("no ip domain lookup")
 		commands.append("ip routing")
 		commands.append("ip cef")
+  
+	# Configuration LDP
+	for command in router.ldp_config.strip().split('\n'):
+		if command != '':
+			commands.append(command)
 
 	# Configuration des interfaces
 	for config_string in router.config_str_per_link.values():
@@ -286,7 +291,7 @@ def get_all_telnet_commands(AS:AS, router:"Router"):
 	for command in router.config_bgp.strip().split('\n'):
 		if command != '':
 			commands.append(command)
-
+ 
 	# Configuration des route-maps et community-lists
 	for line in AS.full_community_lists.split("\n"):
 		if line.strip() != "":
