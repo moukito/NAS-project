@@ -63,15 +63,35 @@ def parse_intent_file(file_path: str) -> tuple[list[AS], list[Router]]:
             # Gestion des AS connectés selon la version IP
             connected_as = autonomous.get("connected_AS", [])
             
-            les_as.append(AS(ip, as_number, routers, internal_routing, connected_as, loopback_prefix, 
-                           global_counter, ip_version, ipv4_prefix))
-        
+            les_as.append(AS(ip, as_number, routers, internal_routing, connected_as, loopback_prefix, global_counter, ip_version, ipv4_prefix))
+
         les_routers = []
         for router in data[ROUTER_LIST_NAME]:
             hostname = router["hostname"]
             links = router["links"]
             as_number = router["AS_number"]
             position = router.get("position", {"x": 0, "y": 0})
-            les_routers.append(Router(hostname, links, as_number, position, ip_version))
-        
-        return (les_as, les_routers)
+            
+            new_router = Router(hostname, links, as_number, position, ip_version)
+            
+            ipv6_loopback_address = router.get("ipv6_loopback_address", None)
+                
+            if ipv6_loopback_address is not None:
+                addr, prefix = ipv6_loopback_address.split('/')
+                new_router.loopback_address = ipaddress.IPv6Address(addr)
+            
+            ipv4_loopback_address = router.get("ipv4_loopback_address", None)
+
+            if ipv4_loopback_address is not None:
+                addr, prefix = ipv4_loopback_address.split('/')
+                new_router.router_id = int(addr.split(".")[-1])
+                for one_as in les_as:
+                    if one_as.AS_number == as_number:
+                        one_as.global_router_counter.reserve_id(new_router.router_id)
+                        new_as = one_as
+                        les_as.pop(les_as.index(one_as))
+                        les_as.append(new_as)
+
+            les_routers.append(new_router)
+
+        return les_as, les_routers
