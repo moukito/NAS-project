@@ -6,8 +6,9 @@ from ipaddress import IPv6Address, IPv4Address, IPv6Network, IPv4Network
 
 
 class Router:
-    def __init__(self, hostname: str, links, AS_number: int, position=None, ip_version: int = 6):
+    def __init__(self, hostname: str, router_type: str, links, AS_number: int, position=None, ip_version: int = 6):
         self.hostname = hostname
+        self.router_type = router_type
         self.links = links
         self.AS_number = AS_number
         self.ip_version = ip_version
@@ -251,10 +252,19 @@ class Router:
                             extra_config = f"ip ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n ip ospf cost {link["ospf_cost"]}\n"
                     elif my_as.internal_routing == "RIP":
                         extra_config = f"ip rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
+                        
                     # Pour IPv4, on utilise un masque de sous-réseau au lieu de la notation CIDR
-                    mask = str(self.subnetworks_per_link[link["hostname"]].network_address.netmask)
-                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n exit\n"
+                    mask = str(self.subnetworks_per_link[link["hostname"]].network_address.netmask
+                        
+                    ldp_config = ""
+                    if all_routers[self.interface_per_link.get(link["hostname"])].router_type in ("Provider", "Provider Edge") and self.type in ("Provider", "Provider Edge"):
+                        ldp_config += " mpls ip\n mpls ldp enable\n"
+                               
+                    vrf_config = ""
+                               
+                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{ldp_config}\n{extra_config}\n exit\n"
         return 1
+                
 
     def set_loopback_configuration_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"],
                                         mode: str):
@@ -372,3 +382,11 @@ router bgp {self.AS_number}
             connector.update_node_position(self.hostname, self.position["x"], self.position["y"])
         except Exception as e:
             print(f"Error updating position for {self.hostname}: {e}")
+
+    def set_ldp_config_data(self, mode: str):
+        if mode == "telnet":
+            config_ldp = f"mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
+        elif mode == "cfg":
+            #todo
+            pass
+        

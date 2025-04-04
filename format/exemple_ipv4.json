@@ -1,83 +1,71 @@
 {
-    "ip_version": 4,
-    "Les_AS": [
+  "ip_version": 4,
+  "Les_AS": [
+    {
+      "ipv4_prefix": "192.168.1.0/24",
+      "AS_number": 111,
+      "routers": [
+        "PE1",
+        "PE2",
+        "P1",
+        "P2"
+      ],
+      "internal_routing": "OSPF",
+      "ipv4_loopback_prefix": "10.1.1.0/24"
+    }
+  ],
+  "Les_routeurs": [
+    {
+      "hostname": "PE1",
+      "router_type": "Provider Edge",
+      "links": [
         {
-            "ipv4_prefix": "192.168.1.0/24",
-            "AS_number": 111,
-            "routers": [
-                "PE1",
-                "PE2",
-                "P1",
-                "P2"
-            ],
-            "internal_routing": "OSPF",
-            "ipv4_loopback_prefix": "10.1.1.0/24"
+          "type": "Provider",
+          "hostname": "P1"
         }
-    ],
-    "Les_routeurs": [
+      ],
+      "AS_number": 111
+    },
+    {
+      "hostname": "P1",
+      "router_type": "Provider",
+      "links": [
         {
-            "hostname": "PE1",
-            "links": [
-                {
-                    "type": "Router",
-                    "hostname": "P1"
-                }
-            ],
-            "AS_number": 111,
-            "position": {
-                "x": -500,
-                "y": 0
-            }
+          "router_type": "Provider",
+          "hostname": "P2"
         },
         {
-            "hostname": "P1",
-            "links": [
-                {
-                    "type": "Router",
-                    "hostname": "P2"
-                },
-                {
-                    "type": "Router",
-                    "hostname": "PE1"
-                }
-            ],
-            "AS_number": 111,
-            "position": {
-                "x": -250,
-                "y": 0
-            }
-        },
-        {
-            "hostname": "P2",
-            "links": [
-                {
-                    "type": "Router",
-                    "hostname": "P1"
-                },
-                {
-                    "type": "Router",
-                    "hostname": "PE2"
-                }
-            ],
-            "AS_number": 111,
-            "position": {
-                "x": 250,
-                "y": 0
-            }
-        },
-        {
-            "hostname": "PE2",
-            "links": [
-                {
-                    "type": "Router",
-                    "hostname": "P2"
-                }
-            ],
-            "AS_number": 111,
-            "position": {
-                "x": 500,
-                "y": 0
-            }
+            "router_type": "Provider Edge",
+            "hostname": "PE1"
         }
-    ]
+      ],
+      "AS_number": 111
+    },
+    {
+        "hostname": "P2",
+        "router_type": "Provider",
+        "links": [
+          {
+            "router_type": "Provider",
+            "hostname": "P1"
+          },
+          {
+              "router_type": "Provider Edge",
+              "hostname": "PE2"
+          }
+        ],
+        "AS_number": 111
+      },
+      {
+        "hostname": "PE2",
+        "router_type": "Provider Edge",
+        "links": [
+          {
+            "router_type": "Provider",
+            "hostname": "P2"
+          }
+        ],
+        "AS_number": 111
+      }
+  ]
 }
