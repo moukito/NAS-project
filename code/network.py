@@ -144,8 +144,8 @@ def list_of_ints_and_mask_to_ipv6_network(ints: list[int], mask: int) -> IPv6Net
     actual_mask = str(mask * 16)
     new_string = ""
     for i in range(len(ints) - 1):
-        new_string += f"{hex(ints[i]).split("x")[1]}:"
-    new_string += f"{hex(ints[-1]).split("x")[1]}/{actual_mask}"
+        new_string += f"{hex(ints[i]).split('x')[1]}:"
+    new_string += f"{hex(ints[-1]).split('x')[1]}/{actual_mask}"
     return IPv6Network(new_string)
 
 
