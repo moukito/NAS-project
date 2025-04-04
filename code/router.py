@@ -29,10 +29,7 @@ class Router:
         self.config_bgp = "!"
         self.position = position if position else {"x": 0, "y": 0}
         # Initialisation de l'adresse de loopback selon la version IP
-        if self.ip_version == 6:
-            self.loopback_address = IPv6Address("0::")
-        else:
-            self.loopback_address = IPv4Address("0.0.0.0")
+        self.loopback_address = None
         self.internal_routing_loopback_config = ""
         self.route_maps = {}
         self.used_route_maps = set()
@@ -266,9 +263,10 @@ class Router:
         
         """
         my_as = autonomous_systems[self.AS_number]
-        router_id = my_as.global_router_counter.get_next_router_id()
-        self.router_id = router_id
-        self.loopback_address = my_as.loopback_prefix.get_ip_address_with_router_id(router_id)
+        if self.router_id is None:
+            self.router_id = my_as.global_router_counter.get_next_router_id()
+        if self.loopback_address is None:
+            self.loopback_address = my_as.loopback_prefix.get_ip_address_with_router_id(self.router_id)
         if my_as.internal_routing == "OSPF":
             if mode == "cfg":
                 if self.ip_version == 6: # todo : a revoir
