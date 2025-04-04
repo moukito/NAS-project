@@ -81,6 +81,8 @@ def main(mode: str, file: str) -> None:
 	todo = list()
 	for router in les_routers:
 		router.cleanup_used_interfaces(as_dico, router_dico, connector)
+		router.set_reserved_interface_data(as_dico, router_dico, mode)
+	for router in les_routers:
 		if not router.set_interface_configuration_data(as_dico, router_dico, mode):
 			todo.append(router)
 	while len(todo) > 0:
