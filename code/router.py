@@ -330,8 +330,14 @@ class Router:
                     elif my_as.internal_routing == "RIP":
                         extra_config = f"ip rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
                     # Pour IPv4, on utilise un masque de sous-réseau au lieu de la notation CIDR
-                    mask = str(self.subnetworks_per_link[link['hostname']].network_address.netmask)
-                    self.config_str_per_link[link['hostname']] = f"interface {self.interface_per_link[link['hostname']]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n exit\n"
+                    mask = str(self.subnetworks_per_link[link["hostname"]].network_address.netmask)
+                    
+                    # Configuration LDP pour IPv4
+                    ldp_config = ""
+                    if all_routers[link["hostname"]].router_type in ("Provider", "Provider Edge") and self.router_type in ("Provider", "Provider Edge"):
+                        ldp_config += " mpls ip\n mpls ldp enable\n"
+
+                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{ldp_config}\n{extra_config}\n exit\n"
         return 1
 
     def set_loopback_configuration_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"],
