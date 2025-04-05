@@ -6,9 +6,9 @@ from ipaddress import IPv6Address, IPv4Address, IPv6Network, IPv4Network
 
 
 class Router:
-    def __init__(self, hostname: str, router_type: str, links, AS_number: int, position=None, ip_version: int = 6):
+    def __init__(self, hostname: str, LDP_activation: bool, links, AS_number: int, position=None, ip_version: int = 6):
         self.hostname = hostname
-        self.router_type = router_type
+        self.LDP_activation = LDP_activation
         self.links = links
         self.AS_number = AS_number
         self.ip_version = ip_version
@@ -34,6 +34,7 @@ class Router:
         self.internal_routing_loopback_config = ""
         self.route_maps = {}
         self.used_route_maps = set()
+        self.ldp_config = ""
 
 
     def __str__(self):
@@ -335,8 +336,8 @@ class Router:
                     
                     # Configuration LDP pour IPv4
                     ldp_config = ""
-                    if all_routers[link["hostname"]].router_type in ("Provider", "Provider Edge") and self.router_type in ("Provider", "Provider Edge"):
-                        ldp_config += " mpls ip\n mpls ldp enable\n"
+                    if all_routers[link["hostname"]].LDP_activation and self.LDP_activation:
+                        ldp_config += " mpls ip\n"
 
                     self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{ldp_config}\n{extra_config}\n exit\n"
         return 1
@@ -461,16 +462,16 @@ router bgp {self.AS_number}
             print(f"Error updating position for {self.hostname}: {e}")
 
     def set_ldp_config_data(self, mode: str):
-        if mode == "telnet":
-            config_ldp = f"mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
-        elif mode == "cfg":
-            config_ldp = f"""
+        if self.LDP_activation:
+            if mode == "telnet":
+                self.config_ldp = f"mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
+            elif mode == "cfg":
+                self.config_ldp = f"""
 mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force
 mpls ldp address-family ipv4
- discovery transport-address {self.loopback_address}
+discovery transport-address {self.loopback_address}
 exit
 mpls ldp address-family ipv6
- discovery transport-address {self.loopback_address}
+discovery transport-address {self.loopback_address}
 exit
 """
-        self.config_ldp = config_ldp
