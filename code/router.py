@@ -34,6 +34,7 @@ class Router:
         self.internal_routing_loopback_config = ""
         self.route_maps = {}
         self.used_route_maps = set()
+        self.ldp_config = ""
 
 
     def __str__(self):
@@ -336,9 +337,9 @@ class Router:
                     # Configuration LDP pour IPv4
                     ldp_config = ""
                     if all_routers[link["hostname"]].router_type in ("Provider", "Provider Edge") and self.router_type in ("Provider", "Provider Edge"):
-                        ldp_config += " mpls ip\n mpls ldp enable\n"
+                        ldp_config += " mpls ip\n"
 
-                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{ldp_config}\n{extra_config}\n exit\n"
+                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n{ldp_config}\n exit\n"
         return 1
                 
 
@@ -462,7 +463,7 @@ router bgp {self.AS_number}
 
     def set_ldp_config_data(self, mode: str):
         if mode == "telnet":
-            config_ldp = f"mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
+            self.ldp_config = f"mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
         elif mode == "cfg":
             config_ldp = f"""
 mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force
