@@ -464,6 +464,13 @@ router bgp {self.AS_number}
         if mode == "telnet":
             config_ldp = f"mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
         elif mode == "cfg":
-            #todo
-            pass
-        
+            config_ldp = f"""
+mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force
+mpls ldp address-family ipv4
+ discovery transport-address {self.loopback_address}
+exit
+mpls ldp address-family ipv6
+ discovery transport-address {self.loopback_address}
+exit
+"""
+        self.config_ldp = config_ldp
