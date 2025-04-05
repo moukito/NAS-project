@@ -40,13 +40,15 @@
     "Les_routeurs": [
         {
             "hostname": "PE1",
+            "type": "Provider Edge",
             "links": [
                 {
-                    "type": "Router",
-                    "hostname": "P1"
+                    "type": "Provider",
+                    "hostname": "P1",
+                    "ospf_cost": 2
                 },
                 {
-                    "type": "Router",
+                    "type": "Client Edge",
                     "hostname": "CE1"
                 }
             ],
@@ -59,13 +61,14 @@
         },
         {
             "hostname": "P1",
+            "type": "Provider",
             "links": [
                 {
-                    "type": "Router",
+                    "type": "Provider",
                     "hostname": "PE1"
                 },
                 {
-                    "type": "Router",
+                    "type": "Provider",
                     "hostname": "P2"
                 }
             ],
@@ -77,13 +80,14 @@
         },
         {
             "hostname": "P2",
+            "type": "Provider",
             "links": [
                 {
-                    "type": "Router",
+                    "type": "Provider",
                     "hostname": "P1"
                 },
                 {
-                    "type": "Router",
+                    "type": "Provider",
                     "hostname": "P3"
                 }
             ],
@@ -95,13 +99,14 @@
         },
         {
             "hostname": "P3",
+            "type": "Provider",
             "links": [
                 {
-                    "type": "Router",
+                    "type": "Provider",
                     "hostname": "P2"
                 },
                 {
-                    "type": "Router",
+                    "type": "Provider",
                     "hostname": "P4"
                 }
             ],
@@ -113,13 +118,14 @@
         },
         {
             "hostname": "P4",
+            "type": "Provider",
             "links": [
                 {
-                    "type": "Router",
+                    "type": "Provider",
                     "hostname": "P3"
                 },
                 {
-                    "type": "Router",
+                    "type": "Provider",
                     "hostname": "P5"
                 }
             ],
@@ -131,13 +137,14 @@
         },
         {
             "hostname": "P5",
+            "type": "Provider",
             "links": [
                 {
-                    "type": "Router",
+                    "type": "Provider",
                     "hostname": "P4"
                 },
                 {
-                    "type": "Router",
+                    "type": "Provider Edge",
                     "hostname": "PE2"
                 }
             ],
@@ -149,6 +156,7 @@
         },
         {
             "hostname": "PE2",
+            "type": "Provider Edge",
             "links": [
                 {
                     "type": "Router",
@@ -168,9 +176,10 @@
         },
         {
             "hostname": "CE1",
+            "type": "Client Edge",
             "links": [
                 {
-                    "type": "Router",
+                    "type": "Provider Edge",
                     "hostname": "PE1"
                 }
             ],
@@ -182,9 +191,10 @@
         },
         {
             "hostname": "CE2",
+            "type": "Client Edge",
             "links": [
                 {
-                    "type": "Router",
+                    "type": "Provider Edge",
                     "hostname": "PE2"
                 }
             ],
@@ -196,9 +206,10 @@
         },
         {
             "hostname": "CE3",
+            "type": "Client Edge",
             "links": [
                 {
-                    "type": "Router",
+                    "type": "Provider Edge",
                     "hostname": "PE1"
                 }
             ],
@@ -210,9 +221,10 @@
         },
         {
             "hostname": "CE4",
+            "type": "Client Edge",
             "links": [
                 {
-                    "type": "Router",
+                    "type": "Provider Edge",
                     "hostname": "PE2"
                 }
             ],
