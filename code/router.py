@@ -36,10 +36,7 @@ class Router:
         self.used_route_maps = set()
         self.ldp_config = ""
         self.vrf_config = ""
-        self.RT_number = None
-        self.ldp_config = ""
-        self.vrf_config = ""
-        self.RT_number = None
+        self.RT_number = 0
 
 
     def __str__(self):
