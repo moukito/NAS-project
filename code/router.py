@@ -379,10 +379,15 @@ class Router:
         """
         my_as = autonomous_systems[self.AS_number]
 
-        self.voisins_ibgp = my_as.hashset_routers.difference({self.hostname})
         for link in self.links:
             if all_routers[link['hostname']].AS_number != self.AS_number:
                 self.voisins_ebgp[link['hostname']] = all_routers[link['hostname']].AS_number
+                for connexion in my_as.connected_AS:
+                    if all_routers[link['hostname']].AS_number == connexion[0]:
+                        self.voisins_ibgp = set(list(connexion[2].keys())).difference({self.hostname})
+
+
+                
         if mode == "telnet":
             # todo : telnet commands
             self.config_bgp = f"router bgp {self.AS_number}\nbgp router-id {self.router_id}.{self.router_id}.{self.router_id}.{self.router_id}\n"
