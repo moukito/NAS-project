@@ -339,7 +339,7 @@ class Router:
                     if all_routers[link["hostname"]].LDP_activation and self.LDP_activation:
                         ldp_config += " mpls ip\n"
 
-                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{ldp_config}\n{extra_config}\n exit\n"
+                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n{ldp_config}\n exit\n"
         return 1
                 
 
