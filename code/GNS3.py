@@ -411,12 +411,12 @@ if __name__ == "__main__":
 	print(f"Project '{connector.project.name}' has {len(connector.project.nodes)} nodes.")
 	print(f"connector.project.nodes: {connector.project.nodes}")
 	print(f"connector.project.links: {connector.project.links}")
-	print(connector.get_router_config_path("R1"))
-	print(f"{connector.get_used_interface_for_link("R1", "R2")}")
+	print(connector.get_router_config_path('R1'))
+	print(f"{connector.get_used_interface_for_link('R1', 'R2')}")
 
-	connector.start_node("R1")
+	connector.start_node('R1')
 	commands = ["show", "show run"]
 
-	connector.telnet_connection("R1")
-	connector.send_commands_to_node(commands, "R1")
-	connector.close_telnet_connection("R1")
+	connector.telnet_connection('R1')
+	connector.send_commands_to_node(commands, 'R1')
+	connector.close_telnet_connection('R1')
