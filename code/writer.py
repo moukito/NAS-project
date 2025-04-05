@@ -1,7 +1,6 @@
 from autonomous_system import AS
 
-LINKS_STANDARD = ["FastEthernet0/0", "GigabitEthernet1/0", "GigabitEthernet2/0", "GigabitEthernet3/0",
-				  "GigabitEthernet4/0", "GigabitEthernet5/0", "GigabitEthernet6/0"]
+LINKS_STANDARD = ["FastEthernet0/0", "GigabitEthernet1/0", "GigabitEthernet2/0", "GigabitEthernet3/0", "GigabitEthernet4/0", "GigabitEthernet5/0", "GigabitEthernet6/0"]
 NOM_PROCESSUS_IGP_PAR_DEFAUT = "1984"
 IPV6_UNICAST_STRING = """no ip domain lookup
 ipv6 unicast-routing
@@ -22,6 +21,7 @@ route-map tag_pref_customer permit 10
 """
 STANDARD_LOOPBACK_INTERFACE = "Loopback0"
 
+
 def get_ospf_config_string(AS, router):
 	"""
 	Fonction qui génère la configuration OSPF d'un routeur avec son AS
@@ -29,7 +29,7 @@ def get_ospf_config_string(AS, router):
 	entrées : AS: Autonomous System et router un Router
 	sortie : str contenant la configuration correspondante
 	"""
-	if router.ip_version == 6: # todo : a revoir
+	if router.ip_version == 6:  # todo : a revoir
 		ospf_config_string = f"ipv6 router ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT}\n"
 	else:
 		ospf_config_string = f"router ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT}\n"
@@ -52,7 +52,7 @@ def get_ospf_config_string(AS, router):
 						ip = parts[2]
 						mask = parts[3]
 						# Convert mask to wildcard
-						wildcard = '.'.join([str(255-int(x)) for x in mask.split('.')])
+						wildcard = '.'.join([str(255 - int(x)) for x in mask.split('.')])
 						ospf_config_string += f" network {ip} {wildcard} area 0\n"
 
 	for passive in router.passive_interfaces:
@@ -68,7 +68,7 @@ def get_rip_config_string(AS, router):
 	entrées : AS: Autonomous System et router un Router
 	sortie : str contenant la configuration correspondante
 	"""
-	if router.ip_version == 6: # todo : a revoir
+	if router.ip_version == 6:  # todo : a revoir
 		rip_config_string = f"ipv6 router rip {NOM_PROCESSUS_IGP_PAR_DEFAUT}\n"
 	else:
 		rip_config_string = f"router rip\n version 2\n"
@@ -106,7 +106,7 @@ def get_final_config_string(AS: AS, router: "Router", mode: str):
 	route_maps += AS.global_route_map_out
 
 	# Sélectionner la configuration unicast appropriée selon la version IP
-	if router.ip_version == 6: # todo : a revoir
+	if router.ip_version == 6:  # todo : a revoir
 		unicast_config = IPV6_UNICAST_STRING
 		loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ip address\n negotiation auto\n ipv6 enable\n ipv6 address {router.loopback_address}/128\n {router.internal_routing_loopback_config}"
 		forward_protocol = "ip forward-protocol nd"
@@ -210,7 +210,7 @@ end
 """
 
 
-def get_all_telnet_commands(AS:AS, router:"Router"):
+def get_all_telnet_commands(AS: AS, router: "Router"):
 	"""
 	Génère et renvoie une liste de commandes telnet à partir d'un AS et d'un routeur que l'on SUPPOSE avoir été configuré en mode "telnet"
 
@@ -228,7 +228,7 @@ def get_all_telnet_commands(AS:AS, router:"Router"):
 		commands.append("no ip domain lookup")
 		commands.append("ip routing")
 		commands.append("ip cef")
-  
+
 	# Configuration LDP
 	for command in router.ldp_config.strip().split('\n'):
 		if command != '':
@@ -270,7 +270,7 @@ def get_all_telnet_commands(AS:AS, router:"Router"):
 							ip = parts[2]
 							mask = parts[3]
 							# Convert mask to wildcard
-							wildcard = '.'.join([str(255-int(x)) for x in mask.split('.')])
+							wildcard = '.'.join([str(255 - int(x)) for x in mask.split('.')])
 							commands.append(f"network {ip} {wildcard} area 0")
 
 			for passive in router.passive_interfaces:
@@ -291,7 +291,7 @@ def get_all_telnet_commands(AS:AS, router:"Router"):
 	for command in router.config_bgp.strip().split('\n'):
 		if command != '':
 			commands.append(command)
- 
+
 	# Configuration des route-maps et community-lists
 	for line in AS.full_community_lists.split("\n"):
 		if line.strip() != "":
