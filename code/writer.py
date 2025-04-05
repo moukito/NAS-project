@@ -234,6 +234,11 @@ def get_all_telnet_commands(AS:AS, router:"Router"):
 		if command != '':
 			commands.append(command)
 
+	# Configuration VRF
+	for command in router.vrf_config.strip().split('\n'):
+		if command != '':
+			commands.append(command)
+
 	# Configuration des interfaces
 	for config_string in router.config_str_per_link.values():
 		for command in config_string.strip().split('\n'):

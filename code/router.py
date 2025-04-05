@@ -6,9 +6,8 @@ from ipaddress import IPv6Address, IPv4Address, IPv6Network, IPv4Network
 
 
 class Router:
-    def __init__(self, hostname: str, LDP_activation: bool, links, AS_number: int, position=None, ip_version: int = 6):
+    def __init__(self, hostname: str, links, AS_number: int, position=None, ip_version: int = 6):
         self.hostname = hostname
-        self.LDP_activation = LDP_activation
         self.links = links
         self.AS_number = AS_number
         self.ip_version = ip_version
@@ -35,6 +34,7 @@ class Router:
         self.route_maps = {}
         self.used_route_maps = set()
         self.ldp_config = ""
+        self.vrf_config = ""
 
 
     def __str__(self):
@@ -281,6 +281,7 @@ class Router:
             self.ip_per_link[link['hostname']] = ip_address
             
             if mode == "cfg":
+                #todo: LDP and VRF commands
                 if self.ip_version == 6: # todo : a revoir
                     # Configuration IPv6
                     extra_config = "\n!\n"
@@ -334,12 +335,18 @@ class Router:
                     # Pour IPv4, on utilise un masque de sous-réseau au lieu de la notation CIDR
                     mask = str(self.subnetworks_per_link[link["hostname"]].network_address.netmask)
                     
-                    # Configuration LDP pour IPv4
+                    # Configuration LDP
                     ldp_config = ""
-                    if all_routers[link["hostname"]].LDP_activation and self.LDP_activation:
-                        ldp_config += " mpls ip\n"
+                    if autonomous_systems[all_routers[link["hostname"]].AS_number].LDP_activation and autonomous_systems[self.AS_number].LDP_activation:
+                        ldp_config += "mpls ip\n"
+                    
+                    # Configuration VRF
+                    vrf_config = ""
+                    if autonomous_systems[self.AS_number].LDP_activation and not autonomous_systems[all_routers[link["hostname"]].AS_number].LDP_activation:
+                        vrf_config = f"ip vrf forwarding {self.router_id}" 
 
-                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n{ldp_config}\n exit\n"
+                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n{ldp_config}\n{vrf_config}\n exit\n"
+
         return 1
                 
 
@@ -394,7 +401,6 @@ class Router:
             if all_routers[link['hostname']].AS_number != self.AS_number:
                 self.voisins_ebgp[link['hostname']] = all_routers[link['hostname']].AS_number
         if mode == "telnet":
-            # todo : telnet commands
             self.config_bgp = f"router bgp {self.AS_number}\nbgp router-id {self.router_id}.{self.router_id}.{self.router_id}.{self.router_id}\n"
             config_address_family = ""
             if my_as.ip_version == 6:
@@ -406,6 +412,7 @@ class Router:
                 config_neighbors_ibgp += f"neighbor {remote_ip} remote-as {self.AS_number}\nneighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n"
                 config_address_family += f"neighbor {remote_ip} activate\nneighbor {remote_ip} send-community\n"
             config_neighbors_ebgp = ""
+            vrf_config = ""
             for voisin_ebgp in self.voisins_ebgp:
                 remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
                 remote_as = all_routers[voisin_ebgp].AS_number
@@ -461,12 +468,12 @@ router bgp {self.AS_number}
         except Exception as e:
             print(f"Error updating position for {self.hostname}: {e}")
 
-    def set_ldp_config_data(self, mode: str):
-        if self.LDP_activation:
+    def set_ldp_config_data(self, mode: str, autonomous_systems: dict[int, AS]):
+        if autonomous_systems[self.AS_number].LDP_activation:
             if mode == "telnet":
-                self.config_ldp = f"mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
+                self.ldp_config = f"mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
             elif mode == "cfg":
-                self.config_ldp = f"""
+                self.ldp_config = f"""
 mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force
 mpls ldp address-family ipv4
 discovery transport-address {self.loopback_address}
@@ -475,3 +482,11 @@ mpls ldp address-family ipv6
 discovery transport-address {self.loopback_address}
 exit
 """
+
+    def set_vrf_config_data(self, mode: str, autonomous_systems: dict[int, AS]):
+        if autonomous_systems[self.AS_number].LDP_activation:
+            if mode == "telnet":
+                self.vrf_config = f"ip vrf {self.AS_number}\nrd {self.AS_number}:{self.router_id}\nroute-target export {self.AS_number}:1\nroute-target import {self.AS_number}:1\n"
+            elif mode == "cfg":
+                #todo
+                pass
