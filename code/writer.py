@@ -217,7 +217,7 @@ def get_all_telnet_commands(AS: AS, router: "Router"):
 	entrées : AS: Autonomous System et router un Router
 	sortie : liste de str de commandes telnet à exécuter telles quelles sur une session telnet ouverte du routeur correspondant dans le projet GNS3 voulu
 	"""
-	commands = ["enable", "configure terminal"]
+	commands = ["enable", "configure terminal", "ip bgp-community new-format"]
 
 	# Configuration unicast selon la version IP
 	if router.ip_version == 6:
@@ -229,21 +229,21 @@ def get_all_telnet_commands(AS: AS, router: "Router"):
 		commands.append("ip routing")
 		commands.append("ip cef")
 
-	# Configuration LDP
-	for command in router.ldp_config.strip().split('\n'):
-		if command != '':
+	for command in AS.full_community_lists.split("\n"):
+		commands.append(command)
+
+	liste_raw = AS.global_route_map_out.split("\n")
+	if len(liste_raw) > 3:
+		for command in liste_raw[:len(liste_raw) - 3] + ["exit"] + [liste_raw[-3]] + ["exit"]:
+			commands.append(command)
+	else:
+		for command in [AS.global_route_map_out.split("\n")[0]] + ["exit"]:
 			commands.append(command)
 
-	# Configuration des interfaces
-	for config_string in router.config_str_per_link.values():
-		for command in config_string.strip().split('\n'):
-			if command != '':
-				commands.append(command)
-
-	# Configuration du loopback
-	for command in router.internal_routing_loopback_config.strip().split('\n'):
-		if command != '':
+	for autonomous in router.used_route_maps:
+		for command in AS.community_data[autonomous]["route_map_in"].split("\n"):
 			commands.append(command)
+		commands.append("exit")
 
 	# Configuration du routage interne
 	if AS.internal_routing == "OSPF":
@@ -287,28 +287,34 @@ def get_all_telnet_commands(AS: AS, router: "Router"):
 				commands.append(f"passive-interface {passive}")
 			commands.append("exit")
 
+	# Configuration du loopback
+	for command in router.internal_routing_loopback_config.strip().split('\n'):
+		if command != '':
+			commands.append(command)
+
+	# Configuration des interfaces
+	for config_string in router.config_str_per_link.values():
+		for command in config_string.strip().split('\n'):
+			if command != '':
+				commands.append(command)
+
 	# Configuration BGP
 	for command in router.config_bgp.strip().split('\n'):
 		if command != '':
 			commands.append(command)
 
-	# Configuration des route-maps et community-lists
-	for line in AS.full_community_lists.split("\n"):
-		if line.strip() != "":
-			commands.append(line)
-
-	for autonomous in router.used_route_maps:
-		for line in AS.community_data[autonomous]["route_map_in"].split("\n"):
-			if line.strip() != "":
-				commands.append(line)
-
-	for line in AS.global_route_map_out.split("\n"):
-		if line.strip() not in ["", '!']:
-			commands.append(line)
+	# Configuration LDP
+	for command in router.ldp_config.strip().split('\n'):
+		if command != '':
+			commands.append(command)
 
 	commands.append("exit")
 	commands.append("end")
-	commands.append("write memory")
-	commands.append("\n")
+	#commands.append("write memory")
+	#commands.append("\n")
+
+	for commande in commands:
+		if commande in ["!", "", " "]:
+			commands.remove(commande)
 
 	return commands
