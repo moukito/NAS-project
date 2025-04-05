@@ -301,7 +301,9 @@ def get_all_telnet_commands(AS:AS, router:"Router"):
 		if line.strip() not in ["", '!']:
 			commands.append(line)
 
+	commands.append("exit")
 	commands.append("end")
 	commands.append("write memory")
+	commands.append("\n")
 
 	return commands

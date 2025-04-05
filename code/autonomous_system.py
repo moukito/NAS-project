@@ -5,13 +5,23 @@ from network import SubNetwork
 class GlobalRouterIDCounter:
     def __init__(self):
         self.number = 1
+        self.reserved_id = []
+
     def get_next_router_id(self) -> int:
         temp = self.number
         self.number += 1
+        for this_id in self.reserved_id:
+            if self.number == this_id:
+                self.number += 1
         return temp
+
+    def reserve_id(self, this_id: int):
+        self.reserved_id.append(this_id)
 
 class AS:
     def __init__(self, ipv6_prefix: SubNetwork | None, AS_number: int, routers: list["Router"], internal_routing: str, connected_AS: list[tuple[int, str, dict]], loopback_prefix: SubNetwork, counter:GlobalRouterIDCounter, ip_version: int = 6, ipv4_prefix: SubNetwork | None = None):
+        self.subnet_counter = 0
+        self.reserved_ipv4address = []
         self.ip_version = ip_version # todo : replace name with ipv6
         self.ipv6_prefix = ipv6_prefix
         self.ipv4_prefix = ipv4_prefix
@@ -60,3 +70,8 @@ class AS:
     
     def __str__(self):
         return f"prefix:{self.ipv6_prefix}\n as_number:{self.AS_number}\n routers:{self.routers}\n internal_routing:{self.internal_routing}\n connected_AS:{self.connected_AS}"
+
+    def add_subnet_counter(self):
+        self.subnet_counter += 1
+        if self.subnet_counter in self.reserved_ipv4address:
+            self.add_subnet_counter()
