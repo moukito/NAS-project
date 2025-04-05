@@ -11,7 +11,19 @@
                 "P2"
             ],
             "internal_routing": "OSPF",
+            "connected_AS":[[110, "peer", {"PE1":"192.168.3.0/30", "PE2": "192.168.3.4/30"}]],
             "ipv4_loopback_prefix": "10.1.1.0/24"
+        },
+        {
+            "ipv4_prefix": "192.168.2.0/24",
+            "AS_number": 110,
+            "routers": [
+                "CE1",
+                "CE2"
+            ],
+            "connected_AS":[[111, "peer", {"CE1":"192.168.3.0/24", "CE2": "192.168.3.0/24"}]],
+            "ipv4_loopback_prefix": "10.1.2.0/24",
+            "internal_routing": "OSPF"
         }
     ],
     "Les_routeurs": [
@@ -23,6 +35,10 @@
                     "type": "Router",
                     "hostname": "P1",
                     "ipv4_address": "192.168.1.6/30"
+                },
+                {
+                    "type": "Router",
+                    "hostname": "CE1"
                 }
             ],
             "AS_number": 111,
@@ -78,6 +94,10 @@
                 {
                     "type": "Router",
                     "hostname": "P2"
+                },
+                {
+                    "type": "Router",
+                    "hostname": "CE2"
                 }
             ],
             "AS_number": 111,
@@ -85,6 +105,26 @@
                 "x": 500,
                 "y": 0
             }
+        },
+        {
+            "hostname": "CE1",
+            "links": [
+                {
+                    "type": "Router",
+                    "hostname": "PE1"
+                }
+            ],
+            "AS_number": 110
+        },
+        {
+            "hostname": "CE2",
+            "links": [
+                {
+                    "type": "Router",
+                    "hostname": "PE2"
+                }
+            ],
+            "AS_number": 110
         }
     ]
 }

@@ -155,7 +155,7 @@ class Router:
                         all_routers[link["hostname"]].subnetworks_per_link[self.hostname] = subnet
                     else: # todo : test
                         self.passive_interfaces.add(self.interface_per_link[link["hostname"]])
-                        picked_transport_interface = SubNetwork(my_as.connected_AS_dict[all_routers[link["hostname"]].AS_number][1][self.hostname], 2)
+                        picked_transport_interface = SubNetwork(IPv4Network(f"{IPv4Address(my_as.connected_AS_dict[all_routers[link["hostname"]].AS_number][1][self.hostname].split('/')[0])}/30", strict=False), 2)
                         self.subnetworks_per_link[link["hostname"]] = picked_transport_interface
                         all_routers[link["hostname"]].subnetworks_per_link[self.hostname] = picked_transport_interface
                 elif link["hostname"] not in my_as.hashset_routers:
@@ -170,7 +170,7 @@ class Router:
                 self.ip_per_link[link["hostname"]] = ip_address
 
                 if mode == "cfg":
-                    if self.ip_version == 6: # todo : a revoir
+                    if self.ip_version == 6:
                         # Configuration IPv6
                         extra_config = "\n!\n"
                         if my_as.internal_routing == "OSPF":
@@ -248,11 +248,9 @@ class Router:
                     # Traitement pour les liens vers d'autres AS...
                     self.passive_interfaces.add(self.interface_per_link[link['hostname']])
                     if self.ip_version == 6:
-                        picked_transport_interface = SubNetwork(
-                            my_as.connected_AS_dict[all_routers[link['hostname']].AS_number][1][self.hostname], 2)
+                        picked_transport_interface = SubNetwork(my_as.connected_AS_dict[all_routers[link['hostname']].AS_number][1][self.hostname], 2)
                     else:
-                        picked_transport_interface = SubNetwork(
-                            my_as.connected_AS_dict[all_routers[link['hostname']].AS_number][1][self.hostname], 2)
+                        picked_transport_interface = SubNetwork(IPv4Network(my_as.connected_AS_dict[all_routers[link['hostname']].AS_number][1][self.hostname]), 2)
                     self.subnetworks_per_link[link['hostname']] = picked_transport_interface
                     all_routers[link['hostname']].subnetworks_per_link[self.hostname] = picked_transport_interface
             elif link['hostname'] not in my_as.hashset_routers:
@@ -410,7 +408,7 @@ class Router:
                 config_address_family += f"network {self.loopback_address}/128\n"
             else:
                 config_address_family += f"network {self.loopback_address} mask 255.255.255.255\n"
-            config_address_family += f"exit\nexit\nexit\n"
+            config_address_family += f"exit\nexit\n"
             self.config_bgp += config_neighbors_ibgp
             self.config_bgp += config_neighbors_ebgp
             self.config_bgp += config_address_family
