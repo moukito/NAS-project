@@ -35,6 +35,8 @@ class Router:
         self.route_maps = {}
         self.used_route_maps = set()
         self.ldp_config = ""
+        self.vrf_config = ""
+        self.RT_number = None
 
 
     def __str__(self):
@@ -461,8 +463,17 @@ router bgp {self.AS_number}
 
     def set_ldp_config_data(self, mode: str):
         if mode == "telnet":
-            self.ldp_config = f"mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
+            if self.router_type in ("Provider", "Provider Edge"):
+                self.ldp_config = f"mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
         elif mode == "cfg":
             #todo
             pass
-        
+            
+    def set_vrf_config_data(self, mode: str):
+        if mode == "telnet":
+            if self.router_type in ("Provider", "Provider Edge"):
+                RD_number = self.router_id.split(".")[0]
+                self.vrf_config = f"ip vrf {self.AS_number}\nrd {self.AS_number}:{RD_number}\nroute-target export {self.AS_number}:0\nroute-target import {self.AS_number}:0\n"
+        elif mode == "cfg":
+            #todo
+            pass
