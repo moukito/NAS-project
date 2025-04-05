@@ -69,6 +69,7 @@ def parse_intent_file(file_path: str) -> tuple[list[AS], list[Router]]:
         for router in data[ROUTER_LIST_NAME]:
             hostname = router["hostname"]
             links = router["links"]
+            router_type = router["type"]
             as_number = router["AS_number"]
             position = router.get("position", {"x": 0, "y": 0})
             
