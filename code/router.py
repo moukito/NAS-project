@@ -37,6 +37,9 @@ class Router:
         self.ldp_config = ""
         self.vrf_config = ""
         self.RT_number = None
+        self.ldp_config = ""
+        self.vrf_config = ""
+        self.RT_number = None
 
 
     def __str__(self):
@@ -332,6 +335,7 @@ class Router:
                             extra_config = f"ip ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n ip ospf cost {link['ospf_cost']}\n"
                     elif my_as.internal_routing == "RIP":
                         extra_config = f"ip rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
+                        
                     # Pour IPv4, on utilise un masque de sous-réseau au lieu de la notation CIDR
                     mask = str(self.subnetworks_per_link[link["hostname"]].network_address.netmask)
                     
@@ -341,7 +345,15 @@ class Router:
                         ldp_config += " mpls ip\n"
 
                     self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n{ldp_config}\n exit\n"
+                    
+                    # Configuration LDP pour IPv4
+                    ldp_config = ""
+                    if all_routers[link["hostname"]].router_type in ("Provider", "Provider Edge") and self.router_type in ("Provider", "Provider Edge"):
+                        ldp_config += " mpls ip\n"
+
+                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n{ldp_config}\n exit\n"
         return 1
+                
 
     def set_loopback_configuration_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"],
                                         mode: str):
@@ -461,6 +473,22 @@ router bgp {self.AS_number}
         except Exception as e:
             print(f"Error updating position for {self.hostname}: {e}")
 
+    def set_ldp_config_data(self, mode: str):
+        if mode == "telnet":
+            if self.router_type in ("Provider", "Provider Edge"):
+                self.ldp_config = f"mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
+        elif mode == "cfg":
+            #todo
+            pass
+            
+    def set_vrf_config_data(self, mode: str):
+        if mode == "telnet":
+            if self.router_type in ("Provider", "Provider Edge"):
+                RD_number = self.router_id.split(".")[0]
+                self.vrf_config = f"ip vrf {self.AS_number}\nrd {self.AS_number}:{RD_number}\nroute-target export {self.AS_number}:0\nroute-target import {self.AS_number}:0\n"
+        elif mode == "cfg":
+            #todo
+            pass
     def set_ldp_config_data(self, mode: str):
         if mode == "telnet":
             if self.router_type in ("Provider", "Provider Edge"):
