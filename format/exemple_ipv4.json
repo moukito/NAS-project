@@ -21,7 +21,7 @@
                 "CE1",
                 "CE2"
             ],
-            "connected_AS":[[111, "peer", {"CE1":"192.168.3.0/24", "CE2": "192.168.3.4/24"}]],
+            "connected_AS":[[111, "peer", {"CE1":"192.168.3.0/30", "CE2": "192.168.3.4/30"}]],
             "ipv4_loopback_prefix": "10.1.2.0/24",
             "internal_routing": "OSPF"
         }
@@ -29,15 +29,16 @@
     "Les_routeurs": [
         {
             "hostname": "PE1",
+            "type": "provider edge",
             "ipv4_loopback_address": "10.1.1.4/32",
             "links": [
                 {
-                    "type": "Router",
+                    "type": "provider",
                     "hostname": "P1",
                     "ipv4_address": "192.168.1.6/30"
                 },
                 {
-                    "type": "Router",
+                    "type": "client edge",
                     "hostname": "CE1"
                 }
             ],
@@ -49,14 +50,15 @@
         },
         {
             "hostname": "P1",
+            "type": "provider",
             "ipv4_loopback_address": "10.1.1.2/32",
             "links": [
                 {
-                    "type": "Router",
+                    "type": "provider",
                     "hostname": "P2"
                 },
                 {
-                    "type": "Router",
+                    "type": "provider edge",
                     "hostname": "PE1",
                     "ipv4_address": "192.168.1.5/30"
                 }
@@ -69,14 +71,15 @@
         },
         {
             "hostname": "P2",
+            "type": "provider",
             "ipv4_loopback_address": "10.1.1.1/32",
             "links": [
                 {
-                    "type": "Router",
+                    "type": "provider",
                     "hostname": "P1"
                 },
                 {
-                    "type": "Router",
+                    "type": "provider edge",
                     "hostname": "PE2",
                     "ipv4_address": "192.168.1.9/30"
                 }
@@ -89,14 +92,15 @@
         },
         {
             "hostname": "PE2",
+            "type": "provider edge",
             "ipv4_loopback_address": "10.1.1.3/32",
             "links": [
                 {
-                    "type": "Router",
+                    "type": "provider",
                     "hostname": "P2"
                 },
                 {
-                    "type": "Router",
+                    "type": "client edge",
                     "hostname": "CE2"
                 }
             ],
@@ -108,9 +112,10 @@
         },
         {
             "hostname": "CE1",
+            "type": "client edge",
             "links": [
                 {
-                    "type": "Router",
+                    "type": "provider edge",
                     "hostname": "PE1"
                 }
             ],
@@ -118,9 +123,10 @@
         },
         {
             "hostname": "CE2",
+            "type": "client edge",
             "links": [
                 {
-                    "type": "Router",
+                    "type": "provider edge",
                     "hostname": "PE2"
                 }
             ],
