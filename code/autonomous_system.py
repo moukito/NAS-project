@@ -69,6 +69,7 @@ class AS:
         self.community = f"{self.AS_number}:1000"
         self.global_router_counter = counter
         self.LDP_activation = LDP_activation
+        self.vrf_processus = None
         
     
     def __str__(self):
@@ -78,3 +79,6 @@ class AS:
         self.subnet_counter += 1
         if self.subnet_counter in self.reserved_ipv4address:
             self.add_subnet_counter()
+            
+            
+            

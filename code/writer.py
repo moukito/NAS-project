@@ -22,7 +22,7 @@ route-map tag_pref_customer permit 10
 """
 STANDARD_LOOPBACK_INTERFACE = "Loopback0"
 
-VRF_PROCESSUS = {"VRF_A": False, "VRF_B": False} # Si la valeur vaut True, càd que le processus est activé 
+IDLE_VRF_PROCESSUS = ["VRF_A", "VRF_B"]
 
 def get_ospf_config_string(AS, router):
 	"""

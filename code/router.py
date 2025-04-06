@@ -1,7 +1,7 @@
 from GNS3 import Connector
 from autonomous_system import AS
 from network import SubNetwork
-from writer import LINKS_STANDARD, NOM_PROCESSUS_IGP_PAR_DEFAUT, STANDARD_LOOPBACK_INTERFACE, VRF_PROCESSUS
+from writer import LINKS_STANDARD, NOM_PROCESSUS_IGP_PAR_DEFAUT, STANDARD_LOOPBACK_INTERFACE, IDLE_VRF_PROCESSUS
 from ipaddress import IPv6Address, IPv4Address, IPv6Network, IPv4Network
 
 
@@ -34,11 +34,7 @@ class Router:
         self.route_maps = {}
         self.used_route_maps = set()
         self.ldp_config = ""
-        self.vrf_config = ""
-        self.last_vrf_id = 1
-        self.vrf_processus = {"vrf1": None}
-         
-
+        self.vrf_config = ""        
 
     def __str__(self):
         return f"hostname:{self.hostname}\n links:{self.links}\n as_number:{self.AS_number}"
@@ -345,8 +341,10 @@ class Router:
                     
                     # Configuration VRF
                     vrf_config = ""
-                    if autonomous_systems[self.AS_number].LDP_activation and not autonomous_systems[all_routers[link["hostname"]].AS_number].LDP_activation:
-                        vrf_config = f"ip vrf forwarding {self.router_id}" 
+                    self.set_vrf_processus_for_AS(autonomous_systems)
+                    if self.is_provider_edge(autonomous_systems, all_routers):
+                        if self.AS_number != all_routers[link["hostname"]].AS_number:
+                            vrf_config = f"ip vrf forwarding {autonomous_systems[all_routers[link['hostname']].AS_number].vrf_processus}\n" 
 
                     self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n{ldp_config}\n{vrf_config}\n exit\n"
 
@@ -489,11 +487,13 @@ discovery transport-address {self.loopback_address}
 exit
 """
     def update_vrf_processus(self):
-        last_vrf_name = f"vrf{self.last_vrf_id}"
-        if self.vrf_processus[last_vrf_name] is not None:
-            self.last_vrf_id += 1
-            next_vrf_name = f"vrf{self.last_vrf_id}"
-            self.vrf_processus[next_vrf_name] = None
+        for i in all_routers:
+            last_vrf_name = f"vrf{self.last_vrf_id}"
+            if self.vrf_processus[last_vrf_name] is not None:
+                self.last_vrf_id += 1
+                next_vrf_name = f"vrf{self.last_vrf_id}"
+                self.vrf_processus[next_vrf_name] = None
+            
             
     def is_provider_edge(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
         connected_with_another_as = False
@@ -506,21 +506,25 @@ exit
     def is_provider(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
         connected_with_routers_LDP = True
         for link in self.links:
-            if self.AS_number != all_routers[link['hostname']].AS_number
+            if self.AS_number != all_routers[link['hostname']].AS_number:
                 connected_with_routers_LDP = False
                 break
         return autonomous_systems[self.AS_number].LDP_activation and connected_with_routers_LDP
-    
+                
+    def set_vrf_processus_for_AS(self, autonomous_systems: dict[int, AS]):
+        if autonomous_systems[self.AS_number].LDP_activation:
+            for one_as in autonomous_systems[self.AS_number].connected_AS:
+                if not autonomous_systems[one_as[0]].LDP_activation and autonomous_systems[one_as[0]].vrf_processus is None:
+                    autonomous_systems[one_as[0]].vrf_processus = IDLE_VRF_PROCESSUS.pop(0)
+
     def set_vrf_config_data(self, mode: str, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
+        self.set_vrf_processus_for_AS(autonomous_systems)
         if self.is_provider_edge(autonomous_systems, all_routers):
             if mode == "telnet":
                 self.vrf_config = ""
                 for one_as in autonomous_systems[self.AS_number].connected_AS:
-                    for hostname in one_as[2].keys():
-                        router = all_routers[hostname]
-                        self.update_vrf_processus()
-                        self.vrf_processus[f"vrf{self.last_vrf_id}"] = one_as[0]
-                        self.vrf_config += f"ip vrf {list(self.vrf_processus.keys())[-1]}\nrd {one_as[0]}:{router.router_id}\nroute-target export {one_as[0]}:1\nroute-target import {one_as[0]}:1\n"
+                    if one_as[0] != self.AS_number:
+                        self.vrf_config += f"ip vrf {autonomous_systems[one_as[0]].vrf_processus}\nrd {one_as[0]}:{one_as[0]}\nroute-target export {one_as[0]}:1\nroute-target import {one_as[0]}:1\n"
             elif mode == "cfg":
                 #todo
                 pass
