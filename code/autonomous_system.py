@@ -69,8 +69,7 @@ class AS:
         self.community = f"{self.AS_number}:1000"
         self.global_router_counter = counter
         self.LDP_activation = LDP_activation
-        self.vrf_processus = None
-        
+
     
     def __str__(self):
         return f"prefix:{self.ipv6_prefix}\n as_number:{self.AS_number}\n routers:{self.routers}\n internal_routing:{self.internal_routing}\n connected_AS:{self.connected_AS}"

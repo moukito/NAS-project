@@ -3,7 +3,7 @@ from autonomous_system import AS
 from network import SubNetwork
 from writer import LINKS_STANDARD, NOM_PROCESSUS_IGP_PAR_DEFAUT, STANDARD_LOOPBACK_INTERFACE, IDLE_VRF_PROCESSUS
 from ipaddress import IPv6Address, IPv4Address, IPv6Network, IPv4Network
-
+VRF_PROCESSUS = {}
 
 class Router:
     def __init__(self, hostname: str, links, AS_number: int, position=None, ip_version: int = 6):
@@ -34,7 +34,8 @@ class Router:
         self.route_maps = {}
         self.used_route_maps = set()
         self.ldp_config = ""
-        self.vrf_config = ""        
+        self.vrf_config = ""
+        self.dico_AS_number_VRF_processus = {}
 
     def __str__(self):
         return f"hostname:{self.hostname}\n links:{self.links}\n as_number:{self.AS_number}"
@@ -220,6 +221,8 @@ class Router:
         my_as = autonomous_systems[self.AS_number]
 
         for link in self.links:
+            neighbor_router = all_routers[link['hostname']]
+            
             if not self.interface_per_link.get(link['hostname'], False):
                 interface_for_link = self.available_interfaces.pop(0)
             else:
@@ -336,17 +339,17 @@ class Router:
                     
                     # Configuration LDP
                     ldp_config = ""
-                    if autonomous_systems[all_routers[link["hostname"]].AS_number].LDP_activation and autonomous_systems[self.AS_number].LDP_activation:
+                    if autonomous_systems[neighbor_router.AS_number].LDP_activation and autonomous_systems[self.AS_number].LDP_activation:
                         ldp_config += "mpls ip\n"
                     
                     # Configuration VRF
                     vrf_config = ""
-                    self.set_vrf_processus_for_AS(autonomous_systems)
+                    self.set_vrf_processus(autonomous_systems, all_routers)
                     if self.is_provider_edge(autonomous_systems, all_routers):
-                        if self.AS_number != all_routers[link["hostname"]].AS_number:
-                            vrf_config = f"ip vrf forwarding {autonomous_systems[all_routers[link['hostname']].AS_number].vrf_processus}\n" 
+                        if self.AS_number != neighbor_router.AS_number:
+                            vrf_config = f"ip vrf forwarding {self.dico_AS_number_VRF_processus[neighbor_router.AS_number]}\n" 
 
-                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n{ldp_config}\n{vrf_config}\n exit\n"
+                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n{vrf_config}\nno shutdown\nno ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n{ldp_config}\nexit\n"
 
         return 1
                 
@@ -472,10 +475,10 @@ router bgp {self.AS_number}
         except Exception as e:
             print(f"Error updating position for {self.hostname}: {e}")
 
-    def set_ldp_config_data(self, mode: str, autonomous_systems: dict[int, AS]):
+    def set_ldp_config_data(self, autonomous_systems: dict[int, AS], mode: str):
         if autonomous_systems[self.AS_number].LDP_activation:
             if mode == "telnet":
-                self.ldp_config = f"mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
+                self.ldp_config = f"mpls ip\nmpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
             elif mode == "cfg":
                 self.ldp_config = f"""
 mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force
@@ -486,14 +489,6 @@ mpls ldp address-family ipv6
 discovery transport-address {self.loopback_address}
 exit
 """
-    def update_vrf_processus(self):
-        for i in all_routers:
-            last_vrf_name = f"vrf{self.last_vrf_id}"
-            if self.vrf_processus[last_vrf_name] is not None:
-                self.last_vrf_id += 1
-                next_vrf_name = f"vrf{self.last_vrf_id}"
-                self.vrf_processus[next_vrf_name] = None
-            
             
     def is_provider_edge(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
         connected_with_another_as = False
@@ -511,20 +506,22 @@ exit
                 break
         return autonomous_systems[self.AS_number].LDP_activation and connected_with_routers_LDP
                 
-    def set_vrf_processus_for_AS(self, autonomous_systems: dict[int, AS]):
-        if autonomous_systems[self.AS_number].LDP_activation:
-            for one_as in autonomous_systems[self.AS_number].connected_AS:
-                if not autonomous_systems[one_as[0]].LDP_activation and autonomous_systems[one_as[0]].vrf_processus is None:
-                    autonomous_systems[one_as[0]].vrf_processus = IDLE_VRF_PROCESSUS.pop(0)
-
-    def set_vrf_config_data(self, mode: str, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
-        self.set_vrf_processus_for_AS(autonomous_systems)
+    def set_vrf_processus(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
+        global VRF_PROCESSUS
         if self.is_provider_edge(autonomous_systems, all_routers):
-            if mode == "telnet":
-                self.vrf_config = ""
-                for one_as in autonomous_systems[self.AS_number].connected_AS:
-                    if one_as[0] != self.AS_number:
-                        self.vrf_config += f"ip vrf {autonomous_systems[one_as[0]].vrf_processus}\nrd {one_as[0]}:{one_as[0]}\nroute-target export {one_as[0]}:1\nroute-target import {one_as[0]}:1\n"
-            elif mode == "cfg":
-                #todo
-                pass
+            for link in self.links:
+                neighbor_router = all_routers[link["hostname"]]
+                if self.AS_number != neighbor_router.AS_number:
+                    if VRF_PROCESSUS.get(f"VRF_{self.AS_number}_to_{neighbor_router.AS_number}") is None:
+                        VRF_PROCESSUS[f"VRF_{self.AS_number}_to_{neighbor_router.AS_number}"] = neighbor_router.AS_number
+                    self.dico_AS_number_VRF_processus[neighbor_router.AS_number] = f"VRF_{self.AS_number}_to_{neighbor_router.AS_number}"
+                    
+
+    def set_vrf_config_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"], mode: str):
+        self.set_vrf_processus(autonomous_systems, all_routers)
+        if mode == "telnet":
+            if self.dico_AS_number_VRF_processus != {}:
+                for as_number, processus in self.dico_AS_number_VRF_processus.items():
+                    self.vrf_config += f"ip vrf {processus}\nrd {as_number}:{self.router_id}\nroute-target export {as_number}:{self.AS_number}\nroute-target import {as_number}:{self.AS_number}\n"
+                    
+        
