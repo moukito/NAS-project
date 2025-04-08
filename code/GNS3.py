@@ -404,6 +404,54 @@ class Connector:
 		except Exception as err:
 			print(f"An error occurred: {err}")
 
+	def send_command_and_get_output(self, command: str, node_name: str) -> str:
+		"""
+		Envoie une commande à un routeur via une connexion Telnet active et retourne la sortie.
+
+		Args:
+			command (str): Commande à envoyer au routeur.
+			node_name (str): Nom du routeur/nœud.
+
+		Returns:
+			str: La sortie de la commande.
+
+		Raises:
+			RuntimeError: Si aucune connexion Telnet active n'existe ou si l'exécution
+						  de la commande échoue.
+		"""
+		if self.telnet_session.get(node_name, None) is None:
+			raise RuntimeError("No active Telnet connection. Please establish a connection using telnet_connection().")
+
+		try:
+			self.telnet_session[node_name].write(command.encode('ascii') + b"\r\n")
+
+			output = b""
+
+			chunk = self.telnet_session[node_name].read_until(f"#".encode('ascii'), timeout=2)
+			output += chunk
+
+			# Handle "More" prompts for paginated output
+			while b"--More--" in chunk:
+				self.telnet_session[node_name].write(b" ")
+				chunk = self.telnet_session[node_name].read_until(b"--More--", timeout=2)
+				output += chunk
+
+			decoded_output = output.decode('ascii')
+			# Clean up the output by removing the command prompt and the command itself
+			cleaned_output = decoded_output.replace(f"{node_name}#", "")
+			cleaned_output = cleaned_output.replace(f"{node_name}(config)#", "")
+			cleaned_output = cleaned_output.replace(f"{node_name}(config-rtr)#", "")
+			cleaned_output = cleaned_output.replace(f"{node_name}(config-router)#", "")
+			cleaned_output = cleaned_output.replace(f"{node_name}(config-router-af)#", "")
+			cleaned_output = cleaned_output.replace(f"{node_name}(config-route-map)#", "")
+			cleaned_output = cleaned_output.replace(f"{node_name}(config-if)#", "")
+			cleaned_output = cleaned_output.replace(command, "").strip()
+
+			return cleaned_output
+
+		except Exception as e:
+			raise RuntimeError(f"Failed to send command to {node_name}: {e}")
+
 
 if __name__ == "__main__":
 	connector = Connector()
