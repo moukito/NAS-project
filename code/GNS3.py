@@ -1,3 +1,24 @@
+"""GNS3 interaction module for network automation and management.
+
+This module provides a comprehensive interface for interacting with GNS3 projects,
+managing network nodes, establishing Telnet connections to routers, and executing
+commands remotely. It enables automation of network configuration, testing, and
+management tasks within GNS3 environments.
+
+The module offers functionality for:
+- Connecting to GNS3 servers and projects
+- Creating, positioning, and linking network nodes
+- Establishing and managing Telnet sessions with routers
+- Sending commands and retrieving outputs from network devices
+- Accessing router configuration files
+
+Typical usage example:
+    connector = Connector()
+    connector.telnet_connection('R1')
+    output = connector.send_command_and_get_output('show ip route', 'R1')
+    connector.close_telnet_connection('R1')
+"""
+
 import os
 import telnetlib
 import time
@@ -17,7 +38,7 @@ class Connector:
 
 		Args:
 			project_name (str): The name of the GNS3 project to load. If None, it selects the
-								first opened project automatically.
+							first opened project automatically.
 			server (str): The GNS3 server URL (default: "http://localhost:3080").
 		"""
 		self.server = gns3fy.Gns3Connector(server)
@@ -142,6 +163,16 @@ class Connector:
 			raise RuntimeError(f"Failed to send commands to {node_name}: {e}")
 
 	def get_output(self, command, node_name):
+		"""
+		Retrieves the output of a command sent to a router via Telnet.
+
+		Args:
+			command (str): The command to send to the router.
+			node_name (str): Name of the router/node.
+
+		Returns:
+			bytes: The raw output from the router in bytes format.
+		"""
 		self.telnet_session[node_name].write(command.encode('ascii') + b"\r\n")
 		output = b""
 		chunk = self.telnet_session[node_name].read_until(f"#".encode('ascii'), timeout=2)
@@ -407,18 +438,18 @@ class Connector:
 
 	def send_command_and_get_output(self, command: str, node_name: str) -> str:
 		"""
-		Envoie une commande à un routeur via une connexion Telnet active et retourne la sortie.
+		Sends a command to a router via an active Telnet connection and returns the output.
 
 		Args:
-			command (str): Commande à envoyer au routeur.
-			node_name (str): Nom du routeur/nœud.
+			command (str): Command to send to the router.
+			node_name (str): Name of the router/node.
 
 		Returns:
-			str: La sortie de la commande.
+			str: The output of the command.
 
 		Raises:
-			RuntimeError: Si aucune connexion Telnet active n'existe ou si l'exécution
-						  de la commande échoue.
+			RuntimeError: If there is no active Telnet connection or if the command
+				execution fails.
 		"""
 		if self.telnet_session.get(node_name, None) is None:
 			raise RuntimeError("No active Telnet connection. Please establish a connection using telnet_connection().")
