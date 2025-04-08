@@ -98,7 +98,8 @@ def main(mode: str, file: str) -> None:
 	config_data = {router.hostname: "" for router in les_routers}
 	for router in les_routers:
 		router.set_bgp_config_data(as_dico, router_dico, mode)
-		router.set_ldp_config_data(mode)
+		router.set_ldp_config_data(as_dico, mode)
+		router.set_vrf_config_data(as_dico, router_dico, mode)
 
 		try:
 			config_data[router.hostname] = writer.get_final_config_string(as_dico[router.AS_number], router, mode)

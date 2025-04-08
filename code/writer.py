@@ -21,6 +21,8 @@ route-map tag_pref_customer permit 10
 """
 STANDARD_LOOPBACK_INTERFACE = "Loopback0"
 
+IDLE_VRF_PROCESSUS = ["VRF_A", "VRF_B"]
+
 
 def get_ospf_config_string(AS, router):
 	"""
@@ -305,6 +307,11 @@ def get_all_telnet_commands(AS: AS, router: "Router"):
 
 	# Configuration LDP
 	for command in router.ldp_config.strip().split('\n'):
+		if command != '':
+			commands.append(command)
+
+	# Configuration VRF
+	for command in router.vrf_config.strip().split('\n'):
 		if command != '':
 			commands.append(command)
 

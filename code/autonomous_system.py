@@ -19,7 +19,7 @@ class GlobalRouterIDCounter:
         self.reserved_id.append(this_id)
 
 class AS:
-    def __init__(self, ipv6_prefix: SubNetwork | None, AS_number: int, routers: list["Router"], internal_routing: str, connected_AS: list[tuple[int, str, dict]], loopback_prefix: SubNetwork, counter:GlobalRouterIDCounter, ip_version: int = 6, ipv4_prefix: SubNetwork | None = None):
+    def __init__(self, ipv6_prefix: SubNetwork | None, AS_number: int, routers: list["Router"], internal_routing: str, connected_AS: list[tuple[int, str, dict]], loopback_prefix: SubNetwork, counter:GlobalRouterIDCounter, ip_version: int = 6, ipv4_prefix: SubNetwork | None = None, LDP_activation = False):
         self.subnet_counter = 0
         self.reserved_ipv4address = []
         self.ip_version = ip_version # todo : replace name with ipv6
@@ -66,7 +66,7 @@ class AS:
         self.loopback_prefix = loopback_prefix
         self.community = f"{self.AS_number}:1000"
         self.global_router_counter = counter
-        
+        self.LDP_activation = LDP_activation
     
     def __str__(self):
         return f"prefix:{self.ipv6_prefix}\n as_number:{self.AS_number}\n routers:{self.routers}\n internal_routing:{self.internal_routing}\n connected_AS:{self.connected_AS}"

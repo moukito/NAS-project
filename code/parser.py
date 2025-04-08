@@ -45,6 +45,7 @@ def parse_intent_file(file_path: str) -> tuple[list[AS], list[Router]]:
         for autonomous in data[AS_LIST_NAME]:
             as_number = autonomous["AS_number"]
             routers = autonomous["routers"]
+            LDP_activation = autonomous.get("LDP_activation", False)
             
             # Traitement selon la version IP
             if ip_version == 6: # todo : care
@@ -63,16 +64,15 @@ def parse_intent_file(file_path: str) -> tuple[list[AS], list[Router]]:
             # Gestion des AS connectés selon la version IP
             connected_as = autonomous.get("connected_AS", [])
             
-            les_as.append(AS(ip, as_number, routers, internal_routing, connected_as, loopback_prefix, global_counter, ip_version, ipv4_prefix))
+            les_as.append(AS(ip, as_number, routers, internal_routing, connected_as, loopback_prefix, global_counter, ip_version, ipv4_prefix, LDP_activation))
 
         les_routers = []
         for router in data[ROUTER_LIST_NAME]:
             hostname = router["hostname"]
             links = router["links"]
             as_number = router["AS_number"]
-            LDP_activation = router.get("LDP_activation", False)
             position = router.get("position", {"x": 0, "y": 0})
-            new_router = Router(hostname, LDP_activation, links, as_number, position, ip_version)
+            new_router = Router(hostname, links, as_number, position, ip_version)
             
             ipv6_loopback_address = router.get("ipv6_loopback_address", None)
                 
