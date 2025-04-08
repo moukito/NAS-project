@@ -1,14 +1,14 @@
-Configuration reseau avec 2 VRF
+Configuration réseau avec 2 VRF
 
 
-1/Configurer toutes  les interfaces
+1/Configurer toutes les interfaces
 ```
 conf t
 Interface GigabitEthernet2/0
 ip address 192.168.2.1 255.255.255.252
  no shut
 ```
-2/Donner des loopbacks aux routeurs du backbone (PE1,P1,P2,PE2) 
+2/Donner des loopback aux routeurs du backbone (PE1,P1,P2,PE2) 
 ```
 conf t
 interface loopback0
@@ -52,17 +52,17 @@ interface GigabitEthernet3/0
  no shutdown
 ```
 
-s'assurer que LDP utilise la loopback comme source (sur chaque routeur du core)
+S'assurer que LDP utilise la loopback comme source (sur chaque routeur du core).
 ```
 Conf t
 mpls ldp router-id Loopback0 force
 ```
 5/Ajouter les VRFs sur les PE.
 
-Créer les vrfs :
+Créer les VRF :
 
-Ex : Création de 2 vrfs. Sur chaque PE :
-(On créé 2 VRF ici)
+Ex : Création de 2 VRF. Sur chaque PE :
+(On crée 2 VRF ici).
 ```
 Conf t
 ip vrf VRF-A
@@ -79,7 +79,7 @@ ip vrf VRF-B
 Associer les interfaces CE ↔ PE à la bonne VRF :
 
 PE1 interface vers routeur A (VRF-A) : (Ceci ce fait pour chaque pair PE/CE mais sur le PE)
-(On fait ceci sur les PE pour chaque lien avec un CE en mettant l’ip du lien CE PE cote PE et la bonne VRF a mettre le CE)
+(On fait ceci sur les PE pour chaque lien avec un CE en mettant l’IP du lien CE PE cote PE et la bonne VRF à mettre le CE)
 ```
 Conf t
 interface GigabitEthernet 3/0
@@ -90,10 +90,10 @@ interface GigabitEthernet 3/0
   
 6/BGP VPNv4 entre PE1 et PE2.
 
-A faire sur chaque PE :
+À faire sur chaque PE :
 
 //meme as pour les 2 PE
-//mettre la loopback de PE2 si on fait ca sur PE1 a la place de 192.168.10.11 et inversement
+//mettre la loopback de PE2 si on fait ça sur PE1 à la place de 192.168.10.11 et inversement
 ```
 Conf t
 router bgp 65000 
@@ -109,7 +109,7 @@ router bgp 65000
   neighbor 192.168.10.11 send-community extended
  exit-address-family
 ```
-Ensuite redistribuer les routes VRF dans BGP: (a faire sur chaque PE)
+Ensuite redistribuer les routes VRF dans BGP : (à faire sur chaque PE)
 
 ```
 conf t
