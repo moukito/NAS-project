@@ -1,3 +1,16 @@
+"""Router module for network configuration.
+
+This module provides the Router class which represents a network router in a simulated environment.
+It handles router configuration, interface management, link creation, and protocol configuration
+including BGP, OSPF, RIP, LDP, and VRF.
+
+The Router class supports both IPv4 and IPv6 addressing schemes and can generate configuration
+strings for different deployment modes (configuration file or telnet commands).
+
+The module interacts with GNS3 through the Connector class to create and configure
+routers in a simulated network environment.
+"""
+
 from GNS3 import Connector
 from autonomous_system import AS
 from network import SubNetwork
@@ -8,6 +21,15 @@ VRF_PROCESSUS = {}
 
 class Router:
     def __init__(self, hostname: str, links, AS_number: int, position=None, ip_version: int = 6):
+        """Initialize a Router object with the given parameters.
+        
+        Args:
+            hostname: The hostname of the router
+            links: List of links to other routers
+            AS_number: The Autonomous System number this router belongs to
+            position: Dictionary with x,y coordinates for GNS3 visualization
+            ip_version: IP version to use (4 or 6, defaults to 6)
+        """
         self.hostname = hostname
         self.links = links
         self.AS_number = AS_number
@@ -29,7 +51,6 @@ class Router:
         self.available_interfaces = [LINKS_STANDARD[i] for i in range(len(LINKS_STANDARD))]
         self.config_bgp = "!"
         self.position = position if position else {"x": 0, "y": 0}
-        # Initialisation de l'adresse de loopback selon la version IP
         self.loopback_address = None
         self.internal_routing_loopback_config = ""
         self.route_maps = {}
@@ -40,15 +61,32 @@ class Router:
         self.network_address = {}
 
     def __str__(self):
+        """Return a string representation of the router.
+        
+        Returns:
+            str: A string containing the hostname, links, and AS number
+        """
         return f"hostname:{self.hostname}\n links:{self.links}\n as_number:{self.AS_number}"
 
     def cleanup_used_interfaces(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"],
                                 connector: Connector):
-        """
-        Enlève les interfaces déjà utilisées de self.available_interfaces
-
-        entrées : self (méthode), dictionnaire numéro_d'AS:AS, dictionnaire nom_des_routeurs:Router et Connector au projet GNS3 local
-        sorties : changement de self.available_interfaces
+        """Remove already used interfaces from the available interfaces list.
+        
+        This method checks all links defined for this router and removes the corresponding
+        interfaces from the available interfaces list. It also populates the interface_per_link
+        dictionary with the mapping between neighbor hostnames and interfaces.
+        
+        Args:
+            autonomous_systems: Dictionary mapping AS numbers to AS objects
+            all_routers: Dictionary mapping hostnames to Router objects
+            connector: GNS3 connector object for accessing the GNS3 project
+            
+        Returns:
+            None: Modifies the self.available_interfaces attribute
+            
+        Raises:
+            KeyError: If a link reference is invalid
+            Exception: For other unexpected errors during interface cleanup
         """
         for link in self.links:
             if link.get("interface", False):
