@@ -39,8 +39,8 @@ class SubNetwork:
         """
         Renvoie l'adresse IPv6 ou IPv4 à assigner au routeur d'id router_id.
 
-        Args:
-            router_id: Entier positif représentant l'ID du routeur
+        Args :
+            router_id : Entier positif représentant l'ID du routeur
 
         entrée : self (méthode) et un entier positif de router id
         sortie : une addresse IPv6 ou IPv4 unicast valide selon le type de réseau
@@ -124,7 +124,7 @@ def list_of_ints_and_mask_to_ipv4_network_bits(ints: list[int], mask_bits: int) 
         if remaining_bits > 0:
             # Créer un masque pour garder seulement les bits du réseau
             byte_mask = 0xFF & (0xFF << remaining_bits)
-            used_ints[-(host_bytes + 1)] = used_ints[-(host_bytes + 1)] & byte_mask
+            used_ints[-(host_bytes + 1)] &= byte_mask
 
     # Créer l'adresse réseau en string
     new_string = ""
@@ -220,32 +220,32 @@ def str_ipv6_network_into_list(network_address: IPv6Network) -> tuple[list[int],
     studied_number = ""
     already_one_semicolon = False
     numbers = [0 for i in range(8)]
-    numbers_past_2_semicol = []
-    past_2_semicol = False
+    numbers_past_2_semicolon = []
+    past_2_semicolon = False
     current_slot = 0
     for cara in string.split("/")[0]:
         if cara == ":":
             if already_one_semicolon:
-                past_2_semicol = True
+                past_2_semicolon = True
             else:
-                if not past_2_semicol:
+                if not past_2_semicolon:
                     numbers[current_slot] = int(studied_number, 16)
                     current_slot += 1
                 else:
-                    numbers_past_2_semicol.append(int(studied_number, 16))
+                    numbers_past_2_semicolon.append(int(studied_number, 16))
                 studied_number = ""
                 already_one_semicolon = True
         else:
             already_one_semicolon = False
             studied_number += cara
     if studied_number != "":
-        if past_2_semicol:
-            numbers_past_2_semicol.append(int(studied_number, 16))
+        if past_2_semicolon:
+            numbers_past_2_semicolon.append(int(studied_number, 16))
         else:
             numbers[current_slot] = int(studied_number, 16)
-    for i in range(len(numbers_past_2_semicol)):
-        numbers[-(i + len(numbers_past_2_semicol))] = numbers_past_2_semicol[i]
-    return (numbers, free_slots_start)
+    for i in range(len(numbers_past_2_semicolon)):
+        numbers[-(i + len(numbers_past_2_semicolon))] = numbers_past_2_semicolon[i]
+    return numbers, free_slots_start
 
 
 def str_ipv4_network_into_list(network_address: IPv4Network) -> tuple[list[int], int]:
