@@ -1,7 +1,6 @@
 from autonomous_system import AS
 
-LINKS_STANDARD = ["FastEthernet0/0", "GigabitEthernet1/0", "GigabitEthernet2/0", "GigabitEthernet3/0",
-				  "GigabitEthernet4/0", "GigabitEthernet5/0", "GigabitEthernet6/0"]
+LINKS_STANDARD = ["FastEthernet0/0", "GigabitEthernet1/0", "GigabitEthernet2/0", "GigabitEthernet3/0", "GigabitEthernet4/0", "GigabitEthernet5/0", "GigabitEthernet6/0"]
 NOM_PROCESSUS_IGP_PAR_DEFAUT = "1984"
 IPV6_UNICAST_STRING = """no ip domain lookup
 ipv6 unicast-routing
@@ -20,7 +19,10 @@ route-map tag_pref_peer permit 10
 route-map tag_pref_customer permit 10
  set local-preference 300
 """
-STANDARD_LOOPBACK_INTERFACE = "Loopback1"
+STANDARD_LOOPBACK_INTERFACE = "Loopback0"
+
+IDLE_VRF_PROCESSUS = ["VRF_A", "VRF_B"]
+
 
 def get_ospf_config_string(AS, router):
 	"""
@@ -29,7 +31,7 @@ def get_ospf_config_string(AS, router):
 	entrées : AS: Autonomous System et router un Router
 	sortie : str contenant la configuration correspondante
 	"""
-	if router.ip_version == 6: # todo : a revoir
+	if router.ip_version == 6:  # todo : a revoir
 		ospf_config_string = f"ipv6 router ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT}\n"
 	else:
 		ospf_config_string = f"router ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT}\n"
@@ -52,7 +54,7 @@ def get_ospf_config_string(AS, router):
 						ip = parts[2]
 						mask = parts[3]
 						# Convert mask to wildcard
-						wildcard = '.'.join([str(255-int(x)) for x in mask.split('.')])
+						wildcard = '.'.join([str(255 - int(x)) for x in mask.split('.')])
 						ospf_config_string += f" network {ip} {wildcard} area 0\n"
 
 	for passive in router.passive_interfaces:
@@ -68,7 +70,7 @@ def get_rip_config_string(AS, router):
 	entrées : AS: Autonomous System et router un Router
 	sortie : str contenant la configuration correspondante
 	"""
-	if router.ip_version == 6: # todo : a revoir
+	if router.ip_version == 6:  # todo : a revoir
 		rip_config_string = f"ipv6 router rip {NOM_PROCESSUS_IGP_PAR_DEFAUT}\n"
 	else:
 		rip_config_string = f"router rip\n version 2\n"
@@ -106,7 +108,7 @@ def get_final_config_string(AS: AS, router: "Router", mode: str):
 	route_maps += AS.global_route_map_out
 
 	# Sélectionner la configuration unicast appropriée selon la version IP
-	if router.ip_version == 6: # todo : a revoir
+	if router.ip_version == 6:  # todo : a revoir
 		unicast_config = IPV6_UNICAST_STRING
 		loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ip address\n negotiation auto\n ipv6 enable\n ipv6 address {router.loopback_address}/128\n {router.internal_routing_loopback_config}"
 		forward_protocol = "ip forward-protocol nd"
@@ -210,14 +212,14 @@ end
 """
 
 
-def get_all_telnet_commands(AS:AS, router:"Router"):
+def get_all_telnet_commands(AS: AS, router: "Router"):
 	"""
 	Génère et renvoie une liste de commandes telnet à partir d'un AS et d'un routeur que l'on SUPPOSE avoir été configuré en mode "telnet"
 
 	entrées : AS: Autonomous System et router un Router
 	sortie : liste de str de commandes telnet à exécuter telles quelles sur une session telnet ouverte du routeur correspondant dans le projet GNS3 voulu
 	"""
-	commands = ["enable", "configure terminal"]
+	commands = ["enable", "configure terminal", "ip bgp-community new-format"]
 
 	# Configuration unicast selon la version IP
 	if router.ip_version == 6:
@@ -229,16 +231,21 @@ def get_all_telnet_commands(AS:AS, router:"Router"):
 		commands.append("ip routing")
 		commands.append("ip cef")
 
-	# Configuration des interfaces
-	for config_string in router.config_str_per_link.values():
-		for command in config_string.strip().split('\n'):
-			if command != '':
-				commands.append(command)
+	for command in AS.full_community_lists.split("\n"):
+		commands.append(command)
 
-	# Configuration du loopback
-	for command in router.internal_routing_loopback_config.strip().split('\n'):
-		if command != '':
+	liste_raw = AS.global_route_map_out.split("\n")
+	if len(liste_raw) > 3:
+		for command in liste_raw[:len(liste_raw) - 3] + ["exit"] + [liste_raw[-3]] + ["exit"]:
 			commands.append(command)
+	else:
+		for command in [AS.global_route_map_out.split("\n")[0]] + ["exit"]:
+			commands.append(command)
+
+	for autonomous in router.used_route_maps:
+		for command in AS.community_data[autonomous]["route_map_in"].split("\n"):
+			commands.append(command)
+		commands.append("exit")
 
 	# Configuration du routage interne
 	if AS.internal_routing == "OSPF":
@@ -265,7 +272,7 @@ def get_all_telnet_commands(AS:AS, router:"Router"):
 							ip = parts[2]
 							mask = parts[3]
 							# Convert mask to wildcard
-							wildcard = '.'.join([str(255-int(x)) for x in mask.split('.')])
+							wildcard = '.'.join([str(255 - int(x)) for x in mask.split('.')])
 							commands.append(f"network {ip} {wildcard} area 0")
 
 			for passive in router.passive_interfaces:
@@ -282,28 +289,39 @@ def get_all_telnet_commands(AS:AS, router:"Router"):
 				commands.append(f"passive-interface {passive}")
 			commands.append("exit")
 
+	# Configuration du loopback
+	for command in router.internal_routing_loopback_config.strip().split('\n'):
+		if command != '':
+			commands.append(command)
+
+	# Configuration des interfaces
+	for config_string in router.config_str_per_link.values():
+		for command in config_string.strip().split('\n'):
+			if command != '':
+				commands.append(command)
+
 	# Configuration BGP
 	for command in router.config_bgp.strip().split('\n'):
 		if command != '':
 			commands.append(command)
 
-	# Configuration des route-maps et community-lists
-	for line in AS.full_community_lists.split("\n"):
-		if line.strip() != "":
-			commands.append(line)
+	# Configuration LDP
+	for command in router.ldp_config.strip().split('\n'):
+		if command != '':
+			commands.append(command)
 
-	for autonomous in router.used_route_maps:
-		for line in AS.community_data[autonomous]["route_map_in"].split("\n"):
-			if line.strip() != "":
-				commands.append(line)
-
-	for line in AS.global_route_map_out.split("\n"):
-		if line.strip() not in ["", '!']:
-			commands.append(line)
+	# Configuration VRF
+	for command in router.vrf_config.strip().split('\n'):
+		if command != '':
+			commands.append(command)
 
 	commands.append("exit")
 	commands.append("end")
-	commands.append("write memory")
-	commands.append("\n")
+	#commands.append("write memory")
+	#commands.append("\n")
+
+	for commande in commands:
+		if commande in ["!", "", " "]:
+			commands.remove(commande)
 
 	return commands
