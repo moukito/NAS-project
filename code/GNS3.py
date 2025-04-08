@@ -324,8 +324,8 @@ class Connector:
 					link = gns3fy.Link(project_id=self.project.project_id, connector=self.server, nodes=nodes)
 					link.create()
 
-		except Exception as exce:
-			print("Had an issue creating links : ", exce)
+		except Exception as e:
+			print("Had an issue creating links : ", e)
 
 	@refresh_project
 	def update_node_position(self, node_name: str, x: int, y: int) -> None:
