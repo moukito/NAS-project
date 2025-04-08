@@ -5,6 +5,7 @@ from writer import LINKS_STANDARD, NOM_PROCESSUS_IGP_PAR_DEFAUT, STANDARD_LOOPBA
 from ipaddress import IPv6Address, IPv4Address, IPv6Network, IPv4Network
 VRF_PROCESSUS = {}
 
+
 class Router:
     def __init__(self, hostname: str, links, AS_number: int, position=None, ip_version: int = 6):
         self.hostname = hostname
