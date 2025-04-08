@@ -89,40 +89,28 @@ class Router:
         for link in self.links:
             if link.get("interface", False):
                 interface_1_to_use = link["interface"]
-                other_link = None
-                for other in all_routers[link['hostname']].links:
-                    if other['hostname'] == self.hostname:
-                        other_link = other
-                        break
-                if other_link != None:
-                    if other_link.get("interface", False):
-                        interface_2_to_use = other_link["interface"]
-                    else:
-                        interface_2_to_use = all_routers[link['hostname']].interface_per_link[self.hostname]
-                    print(f"1 : {self.hostname} {link['hostname']}")
-                    connector.create_link_if_it_doesnt_exist(self.hostname, link['hostname'],
-                                                             LINKS_STANDARD.index(interface_1_to_use),
-                                                             LINKS_STANDARD.index(interface_2_to_use))
-                else:
-                    raise KeyError("Le routeur cible n'a pas de lien dans l'autre sens")
+                self.create_link(all_routers, connector, interface_1_to_use, link)
             else:
                 interface_1_to_use = self.interface_per_link[link['hostname']]
-                other_link = None
-                for other in all_routers[link['hostname']].links:
-                    if other['hostname'] == self.hostname:
-                        other_link = other
-                        break
-                if other_link != None:
-                    if other_link.get("interface", False):
-                        interface_2_to_use = other_link["interface"]
-                    else:
-                        interface_2_to_use = all_routers[link['hostname']].interface_per_link[self.hostname]
-                    print(f"1 : {self.hostname} {link['hostname']}")
-                    connector.create_link_if_it_doesnt_exist(self.hostname, link['hostname'],
-                                                             LINKS_STANDARD.index(interface_1_to_use),
-                                                             LINKS_STANDARD.index(interface_2_to_use))
-                else:
-                    raise KeyError("Le routeur cible n'a pas de lien dans l'autre sens")
+                self.create_link(all_routers, connector, interface_1_to_use, link)
+
+    def create_link(self, all_routers, connector, interface_1_to_use, link):
+        other_link = None
+        for other in all_routers[link['hostname']].links:
+            if other['hostname'] == self.hostname:
+                other_link = other
+                break
+        if other_link is not None:
+            if other_link.get("interface", False):
+                interface_2_to_use = other_link["interface"]
+            else:
+                interface_2_to_use = all_routers[link['hostname']].interface_per_link[self.hostname]
+            print(f"1 : {self.hostname} {link['hostname']}")
+            connector.create_link_if_it_doesnt_exist(self.hostname, link['hostname'],
+                                                     LINKS_STANDARD.index(interface_1_to_use),
+                                                     LINKS_STANDARD.index(interface_2_to_use))
+        else:
+            raise KeyError("Le routeur cible n'a pas de lien dans l'autre sens")
 
     def set_reserved_interface_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"], mode: str):
         my_as = autonomous_systems[self.AS_number]
@@ -366,28 +354,18 @@ class Router:
             self.router_id = my_as.global_router_counter.get_next_router_id()
         if self.loopback_address is None:
             self.loopback_address = my_as.loopback_prefix.get_ip_address_with_router_id(self.router_id)
-        if my_as.internal_routing == "OSPF":
-            if mode == "cfg":
-                if self.ip_version == 6: # todo : a revoir
-                    self.internal_routing_loopback_config = f"ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
-                else:
-                    self.internal_routing_loopback_config = f"ip ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n!\n"
-            elif mode == "telnet":
-                if self.ip_version == 6: # todo : a revoir
-                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ip address\n ipv6 enable\n ipv6 address {self.loopback_address}/128\n ipv6 ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n"
-                else:
-                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ipv6 address\n ip address {self.loopback_address} 255.255.255.255\n ip ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n"
-        elif my_as.internal_routing == "RIP":
-            if mode == "cfg":
-                if self.ip_version == 6: # todo : a revoir
-                    self.internal_routing_loopback_config = f"ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
-                else:
-                    self.internal_routing_loopback_config = f"ip rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n!\n"
-            elif mode == "telnet":
-                if self.ip_version == 6: # todo : a revoir
-                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ip address\n ipv6 enable\n ipv6 address {self.loopback_address}/128\n ipv6 rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
-                else:
-                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ipv6 address\n ip address {self.loopback_address} 255.255.255.255\n ip rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
+
+        protocol = my_as.internal_routing.lower()
+        area_or_enable = " area 0" if my_as.internal_routing == "OSPF" else " enable"
+
+        if mode == "cfg":
+            ip_prefix = "ipv6" if self.ip_version == 6 else "ip"
+            self.internal_routing_loopback_config = f"{ip_prefix} {protocol} {NOM_PROCESSUS_IGP_PAR_DEFAUT} {area_or_enable}\n!\n"
+        elif mode == "telnet":
+            if self.ip_version == 6:
+                self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ip address\n ipv6 enable\n ipv6 address {self.loopback_address}/128\n ipv6 {protocol} {NOM_PROCESSUS_IGP_PAR_DEFAUT}{area_or_enable}\n"
+            else:
+                self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ipv6 address\n ip address {self.loopback_address} 255.255.255.255\n ip {protocol} {NOM_PROCESSUS_IGP_PAR_DEFAUT}{area_or_enable}\n"
 
     def set_bgp_config_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"], mode: str):
         """
@@ -416,7 +394,7 @@ class Router:
             
             for one_as in autonomous_systems:
                 vrf_adress_family_config = f"address-family ipv4 vrf {self.AS_number}\nredistribute connected\nexit-address-family\n"
-            
+
             config_neighbors_ebgp = ""
             for voisin_ebgp in self.voisins_ebgp:
                 remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]

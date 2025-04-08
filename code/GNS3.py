@@ -133,23 +133,24 @@ class Connector:
 			with open(log_path, "w") as log_file:
 				for command in commands:
 					print(f"Sending command: {command}")
-					self.telnet_session[node_name].write(command.encode('ascii') + b"\r\n")
-
-					output = b""
-
-					chunk = self.telnet_session[node_name].read_until(f"#".encode('ascii'), timeout=2)
-					output += chunk
-
-					while b"--More--" in chunk:
-						self.telnet_session[node_name].write(b" ")
-						chunk = self.telnet_session[node_name].read_until(b"--More--", timeout=2)
-						output += chunk
+					output = self.get_output(command, node_name)
 
 					decoded_output = output.decode('ascii').replace(f"{node_name}#", "").replace(f"{node_name}(config)#", "").replace(f"{node_name}(config-rtr)#", "").replace(f"{node_name}(config-router)#", "").replace(f"{node_name}(config-router-af)#", "").replace(f"{node_name}(config-route-map)#", "").replace(f"{node_name}(config-if)#", "").replace(command, "").strip()
 					log_file.write(f"Command: {command}\n{decoded_output}\n\n")
 			self.clean_log(log_path, log_path)
 		except Exception as e:
 			raise RuntimeError(f"Failed to send commands to {node_name}: {e}")
+
+	def get_output(self, command, node_name):
+		self.telnet_session[node_name].write(command.encode('ascii') + b"\r\n")
+		output = b""
+		chunk = self.telnet_session[node_name].read_until(f"#".encode('ascii'), timeout=2)
+		output += chunk
+		while b"--More--" in chunk:
+			self.telnet_session[node_name].write(b" ")
+			chunk = self.telnet_session[node_name].read_until(b"--More--", timeout=2)
+			output += chunk
+		return output
 
 	def close_telnet_connection(self, node_name: str) -> None:
 		"""
@@ -423,18 +424,7 @@ class Connector:
 			raise RuntimeError("No active Telnet connection. Please establish a connection using telnet_connection().")
 
 		try:
-			self.telnet_session[node_name].write(command.encode('ascii') + b"\r\n")
-
-			output = b""
-
-			chunk = self.telnet_session[node_name].read_until(f"#".encode('ascii'), timeout=2)
-			output += chunk
-
-			# Handle "More" prompts for paginated output
-			while b"--More--" in chunk:
-				self.telnet_session[node_name].write(b" ")
-				chunk = self.telnet_session[node_name].read_until(b"--More--", timeout=2)
-				output += chunk
+			output = self.get_output(command, node_name)
 
 			decoded_output = output.decode('ascii')
 			# Clean up the output by removing the command prompt and the command itself
