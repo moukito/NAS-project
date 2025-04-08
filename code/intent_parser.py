@@ -1,3 +1,17 @@
+"""
+Intent parser module for network configuration.
+
+This module provides tools for parsing network intent files and converting them into
+network configuration objects. It handles both IPv4 and IPv6 network configurations,
+creating Autonomous Systems (AS) and routers based on the specifications in the intent file.
+
+The module supports:
+- Parsing JSON intent files with network specifications
+- Creating AS and router objects with appropriate configurations
+- Handling both IPv4 and IPv6 addressing schemes
+- Managing router IDs and loopback addresses
+"""
+
 import ipaddress
 import json
 
@@ -12,6 +26,15 @@ IP_VERSION_KEY = "ip_version"
 
 
 def router_list_into_hostname_dictionary(router_list: list[Router]) -> dict[str, Router]:
+    """
+    Convert a list of Router objects into a dictionary indexed by hostname.
+    
+    Args:
+        router_list: A list of Router objects
+        
+    Returns:
+        dict[str, Router]: A dictionary mapping hostnames to Router objects
+    """
     dico = {}
     for router in router_list:
         dico[router.hostname] = router
@@ -19,6 +42,15 @@ def router_list_into_hostname_dictionary(router_list: list[Router]) -> dict[str,
 
 
 def as_list_into_as_number_dictionary(as_list: list[AS]) -> dict[int, AS]:
+    """
+    Convert a list of AS objects into a dictionary indexed by AS number.
+    
+    Args:
+        as_list: A list of AS (Autonomous System) objects
+        
+    Returns:
+        dict[int, AS]: A dictionary mapping AS numbers to AS objects
+    """
     dico = {}
     for autonomous in as_list:
         dico[autonomous.AS_number] = autonomous
@@ -27,17 +59,27 @@ def as_list_into_as_number_dictionary(as_list: list[AS]) -> dict[int, AS]:
 
 def parse_intent_file(file_path: str) -> tuple[list[AS], list[Router]]:
     """
-    Fonction de parsing d'un fichier d'intention dans notre format
-
-    entrée: file_path, un chemin relatif ou absolu valide dans le système de fichier
-    sortie: tuple contenant la liste des AS, et la liste des routeurs dans le fichier donné
-
-    Si le chemin ne mène pas à un fichier valide, la fonction va renvoyer une exception
+    Parse a network intent file in JSON format.
+    
+    This function reads a JSON file containing network intent specifications and
+    creates the corresponding AS and Router objects. It handles both IPv4 and IPv6
+    network configurations.
+    
+    Args:
+        file_path: A valid relative or absolute path to the intent file
+        
+    Returns:
+        tuple[list[AS], list[Router]]: A tuple containing the list of AS objects
+        and the list of Router objects defined in the intent file
+        
+    Raises:
+        FileNotFoundError: If the file path is invalid
+        json.JSONDecodeError: If the file contains invalid JSON
+        KeyError: If required keys are missing in the JSON structure
     """
     with open(file_path, "r") as file:
         data = json.load(file)
         
-        # Récupérer la version IP (par défaut IPv6 si non spécifiée)
         ip_version = data.get(IP_VERSION_KEY, 6)
         
         les_as = []
@@ -47,21 +89,17 @@ def parse_intent_file(file_path: str) -> tuple[list[AS], list[Router]]:
             routers = autonomous["routers"]
             LDP_activation = autonomous.get("LDP_activation", False)
             
-            # Traitement selon la version IP
-            if ip_version == 6: # todo : care
+            if ip_version == 6:
                 ip = SubNetwork(ipaddress.IPv6Network(autonomous["ipv6_prefix"]), len(routers))
                 ipv4_prefix = None
-                # Traitement du préfixe loopback pour IPv6
                 loopback_prefix = SubNetwork(ipaddress.IPv6Network(autonomous["loopback_prefix"]), len(routers))
             else:
                 ip = None # SubNetwork(ipaddress.IPv6Network(autonomous.get("ipv6_prefix", "2001:db8::/64")), len(routers))
                 ipv4_prefix = SubNetwork(ipaddress.IPv4Network(autonomous["ipv4_prefix"]), len(routers))
-                # Traitement du préfixe loopback pour IPv4
                 loopback_prefix = SubNetwork(ipaddress.IPv4Network(autonomous["ipv4_loopback_prefix"]), len(routers))
             
             internal_routing = autonomous["internal_routing"]
             
-            # Gestion des AS connectés selon la version IP
             connected_as = autonomous.get("connected_AS", [])
             
             les_as.append(AS(ip, as_number, routers, internal_routing, connected_as, loopback_prefix, global_counter, ip_version, ipv4_prefix, LDP_activation))
