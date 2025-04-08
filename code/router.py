@@ -36,6 +36,7 @@ class Router:
         self.ldp_config = ""
         self.vrf_config = ""
         self.dico_AS_number_VRF_processus = {}
+        self.network_address = {}
 
     def __str__(self):
         return f"hostname:{self.hostname}\n links:{self.links}\n as_number:{self.AS_number}"
@@ -233,6 +234,8 @@ class Router:
                             new_network_int = int(base_network) + (my_as.subnet_counter - 1) * subnet_size
                             new_network = IPv4Network(f"{IPv4Address(new_network_int)}/30", strict=False)
 
+                            self.network_address[link["hostname"]] = [str(new_network).split("/")[0]] + ["255.255.255.253"]
+
                             subnet = SubNetwork(new_network, 2)
                         self.subnetworks_per_link[link['hostname']] = subnet
                         all_routers[link['hostname']].subnetworks_per_link[self.hostname] = subnet
@@ -356,13 +359,6 @@ class Router:
             self.router_id = my_as.global_router_counter.get_next_router_id()
         if self.loopback_address is None:
             self.loopback_address = my_as.loopback_prefix.get_ip_address_with_router_id(self.router_id)
-      
-            elif mode == "telnet":
-                if self.ip_version == 6:
-                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ip address\n ipv6 enable\n ipv6 address {self.loopback_address}/128\n"
-                else:
-                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ipv6 address\n ip address {self.loopback_address} 255.255.255.255\n"
-                
 
         protocol = my_as.internal_routing.lower()
         area_or_enable = " area 0" if my_as.internal_routing == "OSPF" else " enable"
@@ -372,15 +368,11 @@ class Router:
             self.internal_routing_loopback_config = f"{ip_prefix} {protocol} {NOM_PROCESSUS_IGP_PAR_DEFAUT} {area_or_enable}\n!\n"
         elif mode == "telnet":
             if self.ip_version == 6:
-                if self.is_provider_edge(autonomous_systems, all_routers) or self.is_provider_edge(autonomous_systems, all_routers):
-                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ip address\n ipv6 enable\n ipv6 address {self.loopback_address}/128\n ipv6 {protocol} {NOM_PROCESSUS_IGP_PAR_DEFAUT}{area_or_enable}\n"
-                else:
-                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ip address\n ipv6 enable\n ipv6 address {self.loopback_address}/128\n"
+                is_provider_edge = f"ipv6 {protocol} {NOM_PROCESSUS_IGP_PAR_DEFAUT}{area_or_enable}\n" if self.is_provider_edge(autonomous_systems, all_routers) or self.is_provider_edge(autonomous_systems, all_routers) else ""
+                self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ip address\n ipv6 enable\n ipv6 address {self.loopback_address}/128\n{is_provider_edge}"
             else:
-                if self.is_provider_edge(autonomous_systems, all_routers) or self.is_provider_edge(autonomous_systems, all_routers):
-                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ipv6 address\n ip address {self.loopback_address} 255.255.255.255\n ip {protocol} {NOM_PROCESSUS_IGP_PAR_DEFAUT}{area_or_enable}\n"
-                else:
-                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ipv6 address\n ip address {self.loopback_address} 255.255.255.255\n"
+                is_provider_edge = f"ip {protocol} {NOM_PROCESSUS_IGP_PAR_DEFAUT}{area_or_enable}\n" if self.is_provider_edge(autonomous_systems, all_routers) or self.is_provider_edge(autonomous_systems, all_routers) else ""
+                self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ipv6 address\n ip address {self.loopback_address} 255.255.255.255\n{is_provider_edge}"
 
     def set_bgp_config_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"], mode: str):
         """
