@@ -1,3 +1,24 @@
+"""
+GNS3 Node Position Extension Module
+
+This module extends the GNS3 Connector functionality to retrieve and use node position
+information from GNS3 projects. It provides tools to extract the x and y coordinates
+of nodes within a GNS3 topology and incorporate this positional data into network
+infrastructure JSON representations.
+
+The module contains:
+- ConnectorWithNodePosition: A class that extends the base GNS3 Connector to add
+  node position retrieval capabilities
+- add_positions_to_json: A function that updates JSON infrastructure data with
+  node position information
+
+Usage:
+    connector = ConnectorWithNodePosition()
+    node_positions = connector.get_node_positions()
+
+    # Update existing infrastructure data with positions
+    updated_infra = add_positions_to_json(infrastructure_dict, node_positions)
+"""
 import json
 
 from GNS3 import Connector
