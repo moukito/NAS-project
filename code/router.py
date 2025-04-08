@@ -188,7 +188,7 @@ class Router:
                             "hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no ipv6 address\n negotiation auto\n ip address {str(ip_address)} {mask}\n {extra_config}"
                 elif mode == "telnet":
                     extra_config = ""
-                    if my_as.internal_routing == "OSPF":
+                    if my_as.internal_routing == "OSPF" and (self.is_provider_edge(autonomous_systems, all_routers) or self.is_provider(autonomous_systems, all_routers)):
                         if not link.get("ospf_cost", False):
                             extra_config = f"ip ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n"
                         else:
@@ -314,7 +314,7 @@ class Router:
                 else:
                     # Configuration IPv4 en mode telnet
                     extra_config = ""
-                    if my_as.internal_routing == "OSPF":
+                    if my_as.internal_routing == "OSPF" and (self.is_provider_edge(autonomous_systems, all_routers) or self.is_provider(autonomous_systems, all_routers)):
                         if not link.get('ospf_cost', False):
                             extra_config = f"ip ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n"
                         else:
@@ -338,7 +338,9 @@ class Router:
                             vrf_config = f"ip vrf forwarding {self.dico_AS_number_VRF_processus[neighbor_router.AS_number]}\n" 
 
                     self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n{vrf_config}\nno shutdown\nno ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n{ldp_config}\nexit\n"
+
         return 1
+                
 
     def set_loopback_configuration_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"],
                                         mode: str):
@@ -354,6 +356,13 @@ class Router:
             self.router_id = my_as.global_router_counter.get_next_router_id()
         if self.loopback_address is None:
             self.loopback_address = my_as.loopback_prefix.get_ip_address_with_router_id(self.router_id)
+      
+            elif mode == "telnet":
+                if self.ip_version == 6:
+                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ip address\n ipv6 enable\n ipv6 address {self.loopback_address}/128\n"
+                else:
+                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ipv6 address\n ip address {self.loopback_address} 255.255.255.255\n"
+                
 
         protocol = my_as.internal_routing.lower()
         area_or_enable = " area 0" if my_as.internal_routing == "OSPF" else " enable"
@@ -363,9 +372,15 @@ class Router:
             self.internal_routing_loopback_config = f"{ip_prefix} {protocol} {NOM_PROCESSUS_IGP_PAR_DEFAUT} {area_or_enable}\n!\n"
         elif mode == "telnet":
             if self.ip_version == 6:
-                self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ip address\n ipv6 enable\n ipv6 address {self.loopback_address}/128\n ipv6 {protocol} {NOM_PROCESSUS_IGP_PAR_DEFAUT}{area_or_enable}\n"
+                if self.is_provider_edge(autonomous_systems, all_routers) or self.is_provider_edge(autonomous_systems, all_routers):
+                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ip address\n ipv6 enable\n ipv6 address {self.loopback_address}/128\n ipv6 {protocol} {NOM_PROCESSUS_IGP_PAR_DEFAUT}{area_or_enable}\n"
+                else:
+                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ip address\n ipv6 enable\n ipv6 address {self.loopback_address}/128\n"
             else:
-                self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ipv6 address\n ip address {self.loopback_address} 255.255.255.255\n ip {protocol} {NOM_PROCESSUS_IGP_PAR_DEFAUT}{area_or_enable}\n"
+                if self.is_provider_edge(autonomous_systems, all_routers) or self.is_provider_edge(autonomous_systems, all_routers):
+                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ipv6 address\n ip address {self.loopback_address} 255.255.255.255\n ip {protocol} {NOM_PROCESSUS_IGP_PAR_DEFAUT}{area_or_enable}\n"
+                else:
+                    self.internal_routing_loopback_config = f"interface {STANDARD_LOOPBACK_INTERFACE}\n no ipv6 address\n ip address {self.loopback_address} 255.255.255.255\n"
 
     def set_bgp_config_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"], mode: str):
         """
@@ -477,6 +492,15 @@ exit
                 connected_with_routers_LDP = False
                 break
         return autonomous_systems[self.AS_number].LDP_activation and connected_with_routers_LDP
+    """
+    def is_customer_edge(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
+        connected_with_routers_LDP = False
+        for link in self.links:
+            neighbor_router = all_routers[link["hostname"]]
+            if neighbor_router.is_provider_edge(autonomous_systems, all_routers) and neighbor_router.AS_number != self.AS_number:
+                connected_with_routers_LDP = True
+        return not autonomous_systems[self.AS_number].LDP_activation and connected_with_routers_LDP
+    """
                 
     def set_vrf_processus(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
         global VRF_PROCESSUS
