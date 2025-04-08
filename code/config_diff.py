@@ -261,7 +261,7 @@ def compare_networks(reference_network_file: str, new_network_file: str, output_
         os.makedirs(output_dir)
     
     # Importer les modules nécessaires ici pour éviter les imports circulaires
-    from parser import parse_intent_file
+    from intent_parser import parse_intent_file
     from writer import get_final_config_string
     
     # Charger les réseaux

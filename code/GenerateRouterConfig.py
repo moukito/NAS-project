@@ -11,13 +11,14 @@ Functions:
 import sys
 import threading
 
-import parser
+import intent_parser as parser
+from router import Router
 import writer
 from GNS3 import Connector
 from saveFile import write_string_to_file
 
 
-def apply_router_configuration(connector: Connector, router: object, config_data: str, mode: str) -> None:
+def apply_router_configuration(connector: Connector, router: Router, config_data: str | list, mode: str) -> None:
 	"""
 		Applies the configuration data to a router based on the specified mode of operation.
 
@@ -61,7 +62,7 @@ def main(mode: str, file: str) -> None:
 	Steps performed:
 	1. Parses intent file to extract autonomous systems and router details.
 	2. Sets up routers, updates their positions, and cleans up interfaces.
-	3. Configures router interfaces, loopbacks, and BGP settings.
+	3. Configures router interfaces, loopback, and BGP settings.
 	4. Optionally applies the configurations via Telnet.
 
 	Raises:

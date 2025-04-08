@@ -11,7 +11,7 @@ import argparse
 from typing import List, Dict, Tuple, Set
 
 from GNS3 import Connector
-from parser import parse_intent_file
+from intent_parser import parse_intent_file
 from writer import get_all_telnet_commands
 from capture_config import capture_router_config
 from config_diff import compare_configs, parse_config, generate_commands_from_diff

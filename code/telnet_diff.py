@@ -11,7 +11,7 @@ from typing import List, Dict, Set, Tuple
 
 from GNS3 import Connector
 from writer import get_all_telnet_commands
-from parser import parse_intent_file, router_list_into_hostname_dictionary, as_list_into_as_number_dictionary
+from intent_parser import parse_intent_file, router_list_into_hostname_dictionary, as_list_into_as_number_dictionary
 
 
 def extract_commands_from_file(file_path: str) -> List[str]:

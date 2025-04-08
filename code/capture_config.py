@@ -11,7 +11,7 @@ import argparse
 from typing import List, Dict, Optional
 
 from GNS3 import Connector
-from parser import parse_intent_file
+from intent_parser import parse_intent_file
 
 
 def capture_router_config(connector: Connector, router_name: str, output_dir: str = "configs") -> str:
