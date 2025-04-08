@@ -1,6 +1,6 @@
-Apres avoir configuré les loopbacks :
+Après avoir configuré les loopback :
 
-1/ Faire la commande seulement sur les interfaces qui ne sont pas reliés a un CE
+1/ Faire la commande seulement sur les interfaces qui ne sont pas reliées à un CE
 #enable LDP
 ```
 mpls ip
@@ -20,8 +20,8 @@ neighbor [loopbackPE2] activate
 exit-address-family
 ```
 
-3/ A faire sur les PE
-#Configure VRFs on PE routeurs
+3/ À faire sur les PE
+#Configure VRFs sur les PE routeurs
 
 ```
 enable
@@ -40,7 +40,7 @@ ip vrf forwarding [nom_client CE]
 ip address [ip_address de l'interface du PE connecté au CE] [masque_ip]
 no shutdown
 ```
-4/ A faire sur les PE
+4/ À faire sur les PE
 ```
 enable
 conf t
@@ -52,7 +52,7 @@ no shutdown
 exit
 ```
 
-5/ A faire sur les PE
+5/ À faire sur les PE
 ```
 router bgp [as_numberPE]
  address-family ipv4 vrf [nom_client CE]

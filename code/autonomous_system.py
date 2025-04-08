@@ -1,13 +1,31 @@
-from ipaddress import IPv6Address, IPv6Network, IPv4Address, IPv4Network
+"""
+Module for defining and managing Autonomous Systems (AS) in network simulations.
+This module contains classes to handle router ID assignment and AS configuration.
+"""
 from network import SubNetwork
 
 
 class GlobalRouterIDCounter:
+    """
+    A counter class that manages and assigns unique router IDs.
+
+    This class keeps track of used router IDs and provides methods to get
+    the next available ID or reserve specific IDs.
+    """
     def __init__(self):
+        """
+        Initialize a new router ID counter starting at 1.
+        """
         self.number = 1
         self.reserved_id = []
 
     def get_next_router_id(self) -> int:
+        """
+        Get the next available router ID.
+
+        Returns:
+            int: A unique router ID that hasn't been used or reserved.
+        """
         temp = self.number
         self.number += 1
         for this_id in self.reserved_id:
@@ -16,10 +34,39 @@ class GlobalRouterIDCounter:
         return temp
 
     def reserve_id(self, this_id: int):
+        """
+        Reserve a specific router ID to prevent it from being assigned.
+
+        Args:
+            this_id (int): The router ID to reserve.
+        """
         self.reserved_id.append(this_id)
 
+
 class AS:
+    """
+    Represents an Autonomous System in a network.
+
+    An Autonomous System is a collection of connected routers that operate
+    under a single administrative domain with defined routing policies.
+    """
     def __init__(self, ipv6_prefix: SubNetwork | None, AS_number: int, routers: list["Router"], internal_routing: str, connected_AS: list[tuple[int, str, dict]], loopback_prefix: SubNetwork, counter:GlobalRouterIDCounter, ip_version: int = 6, ipv4_prefix: SubNetwork | None = None, LDP_activation = False):
+        """
+        Initialize a new Autonomous System.
+
+        Args:
+            ipv6_prefix (SubNetwork | None): The IPv6 address prefix for this AS.
+            AS_number (int): The autonomous system number.
+            routers (list[Router]): List of routers in this AS.
+            internal_routing (str): The internal routing protocol used within this AS.
+            connected_AS (list[tuple[int, str, dict]]): List of connected autonomous systems
+                with their relationships (peer, provider, client) and transport information.
+            loopback_prefix (SubNetwork): The prefix used for loopback addresses.
+            counter (GlobalRouterIDCounter): Counter for router ID assignment.
+            ip_version (int, optional): IP version used (default is 6).
+            ipv4_prefix (SubNetwork | None, optional): The IPv4 address prefix for this AS.
+            LDP_activation (bool, optional): Whether Label Distribution Protocol is activated.
+        """
         self.subnet_counter = 0
         self.reserved_ipv4address = []
         self.ip_version = ip_version # todo : replace name with ipv6
@@ -69,9 +116,23 @@ class AS:
         self.LDP_activation = LDP_activation
     
     def __str__(self):
+        """
+        Return a string representation of the AS.
+
+        Returns:
+            str: A string with the AS's details including prefix, number, routers,
+                routing protocol, and connected ASes.
+        """
         return f"prefix:{self.ipv6_prefix}\n as_number:{self.AS_number}\n routers:{self.routers}\n internal_routing:{self.internal_routing}\n connected_AS:{self.connected_AS}"
 
     def add_subnet_counter(self):
+        """
+        Increment the subnet counter and skip reserved addresses.
+
+        This method increases the subnet counter by 1 and checks if the new value
+        is in the reserved address list. If it is, it recursively calls itself
+        until finding a non-reserved address.
+        """
         self.subnet_counter += 1
         if self.subnet_counter in self.reserved_ipv4address:
             self.add_subnet_counter()

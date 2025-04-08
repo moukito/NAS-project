@@ -1,19 +1,32 @@
+"""
+Network management module for IPv4 and IPv6 subnets.
+
+This module provides tools for managing IPv4 and IPv6 networks, including:
+- Creating and manipulating subnets
+- Assigning router identifiers
+- Generating IP addresses for routers
+- Converting between different address representation formats
+
+The main class SubNetwork allows for hierarchical network management,
+with support for both IPv4 and IPv6 addressing schemes.
+"""
+
 from ipaddress import IPv6Address, IPv6Network, IPv4Address, IPv4Network
 
 
 class SubNetwork:
-    """Classe représentant un sous-réseau IPv4 ou IPv6.
+    """Class representing an IPv4 or IPv6 subnet.
     
-    Cette classe permet de gérer des sous-réseaux, d'attribuer des identifiants de routeur
-    et de générer des adresses IP pour les routeurs dans le sous-réseau.
+    This class allows managing subnets, assigning router identifiers,
+    and generating IP addresses for routers within the subnet.
     """
     def __init__(self, network_address, number_of_routers: int = 0, last_router_id: int = 0):
-        """Initialise un sous-réseau.
+        """Initialize a subnet.
         
         Args:
-            network_address: Adresse du réseau (IPv4Network ou IPv6Network)
-            number_of_routers: Nombre de routeurs dans le sous-réseau
-            last_router_id: Dernier ID de routeur attribué
+            network_address: Network address (IPv4Network or IPv6Network)
+            number_of_routers: Number of routers in the subnet
+            last_router_id: Last assigned router ID
         """
         self.network_address = network_address
         self.number_of_routers = number_of_routers
@@ -27,23 +40,23 @@ class SubNetwork:
 
     def get_next_router_id(self) -> int:
         """
-        Renvoie le prochain router id unique à assigner sur ce sous-réseau.
+        Returns the next unique router ID to assign on this subnet.
 
-        entrée : self (méthode)
-        sortie : un entier positif
+        Returns:
+            int: A positive integer representing the router ID
         """
         self.assigned_router_ids += 1
         return self.assigned_router_ids
 
     def get_ip_address_with_router_id(self, router_id: int):
         """
-        Renvoie l'adresse IPv6 ou IPv4 à assigner au routeur d'id router_id.
+        Returns the IPv6 or IPv4 address to assign to the router with the given router_id.
 
         Args:
-            router_id: Entier positif représentant l'ID du routeur
+            router_id: Positive integer representing the router ID
 
-        entrée : self (méthode) et un entier positif de router id
-        sortie : une addresse IPv6 ou IPv4 unicast valide selon le type de réseau
+        Returns:
+            IPv6Address or IPv4Address: A valid unicast IPv6 or IPv4 address depending on the network type
         """
         list_copy = [self.list_ip[i] for i in range(len(self.list_ip))]
         list_copy[-1] = router_id
@@ -54,13 +67,13 @@ class SubNetwork:
 
     def next_subnetwork_with_n_routers(self, routers: int):
         """
-        Crée un nouveau sous-réseau avec une adresse à l'intérieur du réseau actuel.
+        Creates a new subnet with an address inside the current network.
 
         Args:
-            routers: Entier positif représentant le nombre attendu de routeurs dans ce nouveau sous-réseau
+            routers: Positive integer representing the expected number of routers in this new subnet
 
         Returns:
-            Un nouvel objet SubNetwork avec l'adresse appropriée
+            SubNetwork: A new SubNetwork object with the appropriate address
         """
         self.assigned_sub_networks += 1
         if self.is_ipv6:
@@ -98,11 +111,15 @@ class SubNetwork:
 
 def list_of_ints_and_mask_to_ipv4_network_bits(ints: list[int], mask_bits: int) -> IPv4Network:
     """
-    Transforme une liste de 4 entiers et un masque en bits (1 à 32) en une adresse IPv4.
-    S'assure que les bits d'hôte sont à 0 pour créer une adresse réseau valide.
+    Transforms a list of 4 integers and a bit mask (1 to 32) into an IPv4 network address.
+    Ensures that host bits are set to 0 to create a valid network address.
 
-    entrée : liste d'entiers et un masque réseau en bits
-    sortie : addresse de réseau IPv4
+    Args:
+        ints: List of integers
+        mask_bits: Network mask in bits (1 to 32)
+
+    Returns:
+        IPv4Network: A valid IPv4 network address
     """
     used_ints = ints[-4:] if len(ints) > 4 else ints.copy()
 
@@ -124,7 +141,7 @@ def list_of_ints_and_mask_to_ipv4_network_bits(ints: list[int], mask_bits: int) 
         if remaining_bits > 0:
             # Créer un masque pour garder seulement les bits du réseau
             byte_mask = 0xFF & (0xFF << remaining_bits)
-            used_ints[-(host_bytes + 1)] = used_ints[-(host_bytes + 1)] & byte_mask
+            used_ints[-(host_bytes + 1)] &= byte_mask
 
     # Créer l'adresse réseau en string
     new_string = ""
@@ -136,10 +153,14 @@ def list_of_ints_and_mask_to_ipv4_network_bits(ints: list[int], mask_bits: int) 
 
 def list_of_ints_and_mask_to_ipv6_network(ints: list[int], mask: int) -> IPv6Network:
     """
-    Transforme une liste de 8 entiers positifs représentables sur 16 bits et un masque de 1 à 8 en une adresse IPv6.
+    Transforms a list of 8 positive integers (representable on 16 bits) and a mask from 1 to 8 into an IPv6 network address.
 
-    entrée : liste de 8 entiers en question et un masque réseau qui représente le vrai masque divisé par 16
-    sortie : addresse de réseau IPv6
+    Args:
+        ints: List of 8 integers
+        mask: Network mask representing the actual mask divided by 16
+
+    Returns:
+        IPv6Network: An IPv6 network address
     """
     actual_mask = str(mask * 16)
     new_string = ""
@@ -151,10 +172,14 @@ def list_of_ints_and_mask_to_ipv6_network(ints: list[int], mask: int) -> IPv6Net
 
 def list_of_ints_and_mask_to_ipv4_network(ints: list[int], mask: int) -> IPv4Network:
     """
-    Transforme une liste de 4 entiers positifs représentables sur 8 bits et un masque de 1 à 4 en une adresse IPv4.
+    Transforms a list of 4 positive integers (representable on 8 bits) and a mask from 1 to 4 into an IPv4 network address.
 
-    entrée : liste d'entiers (généralement les 4 derniers de la liste complète) et un masque réseau
-    sortie : addresse de réseau IPv4
+    Args:
+        ints: List of integers (typically the last 4 from the complete list)
+        mask: Network mask from 1 to 4
+
+    Returns:
+        IPv4Network: An IPv4 network address
     """
     used_ints = ints[-4:] if len(ints) > 4 else ints
     actual_mask = str(mask * 8)
@@ -167,10 +192,13 @@ def list_of_ints_and_mask_to_ipv4_network(ints: list[int], mask: int) -> IPv4Net
 
 def list_of_ints_into_ipv6_address(ints: list[int]) -> IPv6Address:
     """
-    transforme une liste de 8 entiers positifs représentables sur 16 bits en une addresse IPv6 unicast
+    Transforms a list of 8 positive integers (representable on 16 bits) into an IPv6 unicast address.
 
-    entrée : liste de 8 entiers en question
-    sortie : address IPv6 unicast
+    Args:
+        ints: List of 8 integers
+
+    Returns:
+        IPv6Address: An IPv6 unicast address
     """
     final_string = ""
     for i in range(len(ints) - 1):
@@ -181,10 +209,13 @@ def list_of_ints_into_ipv6_address(ints: list[int]) -> IPv6Address:
 
 def list_of_ints_into_ipv4_address(ints: list[int]) -> IPv4Address:
     """
-    transforme une liste de 4 entiers positifs représentables sur 8 bits en une addresse IPv4 unicast
+    Transforms a list of 4 positive integers (representable on 8 bits) into an IPv4 unicast address.
 
-    entrée : liste d'entiers (généralement les 4 derniers de la liste complète)
-    sortie : address IPv4 unicast
+    Args:
+        ints: List of integers (typically the last 4 from the complete list)
+
+    Returns:
+        IPv4Address: An IPv4 unicast address
     """
     used_ints = ints[-4:] if len(ints) > 4 else ints
     final_string = ""
@@ -196,10 +227,13 @@ def list_of_ints_into_ipv4_address(ints: list[int]) -> IPv4Address:
 
 def str_network_into_list(network_address) -> tuple[list[int], int]:
     """
-    Transforme une adresse de réseau IPv6 ou IPv4 en une liste d'entiers et l'index du premier entier après le masque.
+    Transforms an IPv6 or IPv4 network address into a list of integers and the index of the first integer after the mask.
     
-    entrée : adresse de réseau IPv6 ou IPv4
-    sortie : tuple(liste d'entiers, index du premier entier dans la liste pouvant être changé après le masque)
+    Args:
+        network_address: IPv6 or IPv4 network address
+        
+    Returns:
+        tuple: (list of integers, index of the first integer in the list that can be changed after the mask)
     """
     if isinstance(network_address, IPv6Network):
         return str_ipv6_network_into_list(network_address)
@@ -209,10 +243,14 @@ def str_network_into_list(network_address) -> tuple[list[int], int]:
 
 def str_ipv6_network_into_list(network_address: IPv6Network) -> tuple[list[int], int]:
     """
-    transforme une adresse de réseau IPv6 en une liste d'entiers 16 bits et l'index du premier entier après le masque
-    2001:5:3:0:9:3::/96
-    entrée : adresse de réseau IPv6
-    sortie : tuple(liste de 8 entiers 16 bits, index du premier entier dans la liste pouvant être changé après le masque)
+    Transforms an IPv6 network address into a list of 16-bit integers and the index of the first integer after the mask.
+    Example: 2001:5:3:0:9:3::/96
+    
+    Args:
+        network_address: IPv6 network address
+        
+    Returns:
+        tuple: (list of 8 16-bit integers, index of the first integer in the list that can be changed after the mask)
     """
     string = str(network_address)
     mask = int(string.split("/")[1])
@@ -220,40 +258,44 @@ def str_ipv6_network_into_list(network_address: IPv6Network) -> tuple[list[int],
     studied_number = ""
     already_one_semicolon = False
     numbers = [0 for i in range(8)]
-    numbers_past_2_semicol = []
-    past_2_semicol = False
+    numbers_past_2_semicolon = []
+    past_2_semicolon = False
     current_slot = 0
     for cara in string.split("/")[0]:
         if cara == ":":
             if already_one_semicolon:
-                past_2_semicol = True
+                past_2_semicolon = True
             else:
-                if not past_2_semicol:
+                if not past_2_semicolon:
                     numbers[current_slot] = int(studied_number, 16)
                     current_slot += 1
                 else:
-                    numbers_past_2_semicol.append(int(studied_number, 16))
+                    numbers_past_2_semicolon.append(int(studied_number, 16))
                 studied_number = ""
                 already_one_semicolon = True
         else:
             already_one_semicolon = False
             studied_number += cara
     if studied_number != "":
-        if past_2_semicol:
-            numbers_past_2_semicol.append(int(studied_number, 16))
+        if past_2_semicolon:
+            numbers_past_2_semicolon.append(int(studied_number, 16))
         else:
             numbers[current_slot] = int(studied_number, 16)
-    for i in range(len(numbers_past_2_semicol)):
-        numbers[-(i + len(numbers_past_2_semicol))] = numbers_past_2_semicol[i]
-    return (numbers, free_slots_start)
+    for i in range(len(numbers_past_2_semicolon)):
+        numbers[-(i + len(numbers_past_2_semicolon))] = numbers_past_2_semicolon[i]
+    return numbers, free_slots_start
 
 
 def str_ipv4_network_into_list(network_address: IPv4Network) -> tuple[list[int], int]:
     """
-    transforme une adresse de réseau IPv4 en une liste d'entiers 8 bits et l'index du premier entier après le masque
-    192.168.1.0/24
-    entrée : adresse de réseau IPv4
-    sortie : tuple(liste de 4 entiers 8 bits, index du premier entier dans la liste pouvant être changé après le masque)
+    Transforms an IPv4 network address into a list of 8-bit integers and the index of the first integer after the mask.
+    Example: 192.168.1.0/24
+    
+    Args:
+        network_address: IPv4 network address
+        
+    Returns:
+        tuple: (list of 4 8-bit integers, index of the first integer in the list that can be changed after the mask)
     """
     string = str(network_address)
     mask = int(string.split("/")[1])

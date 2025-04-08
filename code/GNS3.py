@@ -1,3 +1,24 @@
+"""GNS3 interaction module for network automation and management.
+
+This module provides a comprehensive interface for interacting with GNS3 projects,
+managing network nodes, establishing Telnet connections to routers, and executing
+commands remotely. It enables automation of network configuration, testing, and
+management tasks within GNS3 environments.
+
+The module offers functionality for:
+- Connecting to GNS3 servers and projects
+- Creating, positioning, and linking network nodes
+- Establishing and managing Telnet sessions with routers
+- Sending commands and retrieving outputs from network devices
+- Accessing router configuration files
+
+Typical usage example:
+    connector = Connector()
+    connector.telnet_connection('R1')
+    output = connector.send_command_and_get_output('show ip route', 'R1')
+    connector.close_telnet_connection('R1')
+"""
+
 import os
 import telnetlib
 import time
@@ -17,7 +38,7 @@ class Connector:
 
 		Args:
 			project_name (str): The name of the GNS3 project to load. If None, it selects the
-								first opened project automatically.
+							first opened project automatically.
 			server (str): The GNS3 server URL (default: "http://localhost:3080").
 		"""
 		self.server = gns3fy.Gns3Connector(server)
@@ -133,23 +154,34 @@ class Connector:
 			with open(log_path, "w") as log_file:
 				for command in commands:
 					print(f"Sending command: {command}")
-					self.telnet_session[node_name].write(command.encode('ascii') + b"\r\n")
-
-					output = b""
-
-					chunk = self.telnet_session[node_name].read_until(f"#".encode('ascii'), timeout=2)
-					output += chunk
-
-					while b"--More--" in chunk:
-						self.telnet_session[node_name].write(b" ")
-						chunk = self.telnet_session[node_name].read_until(b"--More--", timeout=2)
-						output += chunk
+					output = self.get_output(command, node_name)
 
 					decoded_output = output.decode('ascii').replace(f"{node_name}#", "").replace(f"{node_name}(config)#", "").replace(f"{node_name}(config-rtr)#", "").replace(f"{node_name}(config-router)#", "").replace(f"{node_name}(config-router-af)#", "").replace(f"{node_name}(config-route-map)#", "").replace(f"{node_name}(config-if)#", "").replace(command, "").strip()
 					log_file.write(f"Command: {command}\n{decoded_output}\n\n")
 			self.clean_log(log_path, log_path)
 		except Exception as e:
 			raise RuntimeError(f"Failed to send commands to {node_name}: {e}")
+
+	def get_output(self, command, node_name):
+		"""
+		Retrieves the output of a command sent to a router via Telnet.
+
+		Args:
+			command (str): The command to send to the router.
+			node_name (str): Name of the router/node.
+
+		Returns:
+			bytes: The raw output from the router in bytes format.
+		"""
+		self.telnet_session[node_name].write(command.encode('ascii') + b"\r\n")
+		output = b""
+		chunk = self.telnet_session[node_name].read_until(f"#".encode('ascii'), timeout=2)
+		output += chunk
+		while b"--More--" in chunk:
+			self.telnet_session[node_name].write(b" ")
+			chunk = self.telnet_session[node_name].read_until(b"--More--", timeout=2)
+			output += chunk
+		return output
 
 	def close_telnet_connection(self, node_name: str) -> None:
 		"""
@@ -323,8 +355,8 @@ class Connector:
 					link = gns3fy.Link(project_id=self.project.project_id, connector=self.server, nodes=nodes)
 					link.create()
 
-		except Exception as exce:
-			print("Had an issue creating links : ", exce)
+		except Exception as e:
+			print("Had an issue creating links : ", e)
 
 	@refresh_project
 	def update_node_position(self, node_name: str, x: int, y: int) -> None:
@@ -403,6 +435,43 @@ class Connector:
 			print(f"Error: File not found - {err}")
 		except Exception as err:
 			print(f"An error occurred: {err}")
+
+	def send_command_and_get_output(self, command: str, node_name: str) -> str:
+		"""
+		Sends a command to a router via an active Telnet connection and returns the output.
+
+		Args:
+			command (str): Command to send to the router.
+			node_name (str): Name of the router/node.
+
+		Returns:
+			str: The output of the command.
+
+		Raises:
+			RuntimeError: If there is no active Telnet connection or if the command
+				execution fails.
+		"""
+		if self.telnet_session.get(node_name, None) is None:
+			raise RuntimeError("No active Telnet connection. Please establish a connection using telnet_connection().")
+
+		try:
+			output = self.get_output(command, node_name)
+
+			decoded_output = output.decode('ascii')
+			# Clean up the output by removing the command prompt and the command itself
+			cleaned_output = decoded_output.replace(f"{node_name}#", "")
+			cleaned_output = cleaned_output.replace(f"{node_name}(config)#", "")
+			cleaned_output = cleaned_output.replace(f"{node_name}(config-rtr)#", "")
+			cleaned_output = cleaned_output.replace(f"{node_name}(config-router)#", "")
+			cleaned_output = cleaned_output.replace(f"{node_name}(config-router-af)#", "")
+			cleaned_output = cleaned_output.replace(f"{node_name}(config-route-map)#", "")
+			cleaned_output = cleaned_output.replace(f"{node_name}(config-if)#", "")
+			cleaned_output = cleaned_output.replace(command, "").strip()
+
+			return cleaned_output
+
+		except Exception as e:
+			raise RuntimeError(f"Failed to send command to {node_name}: {e}")
 
 
 if __name__ == "__main__":

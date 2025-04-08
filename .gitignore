@@ -1233,3 +1233,6 @@ code/__pycache__/parser.cpython-313.pyc
 
 NASProject.pdf
 GNS3_Project-2024-2025.pdf
+
+diffs/*diff.html
+configs/*config.txt

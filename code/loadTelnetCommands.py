@@ -1,3 +1,18 @@
+"""Telnet command loading module for network automation tasks.
+
+This module provides functionality for loading Telnet commands from text files,
+which can be used for network device configuration and management. It offers
+a simple interface to read command files line by line, preparing them for
+execution on network devices via Telnet connections.
+
+The module is designed to work with the GNS3 automation framework and can be
+used to load command sets for router configuration, testing, and management.
+
+Typical usage example:
+    commands = load_file("format/telnetCommands")
+    connector.send_commands_to_node(commands, 'R1')
+"""
+
 def load_file(file: str) -> list[str]:
 	"""
 	Reads a text file line by line and returns a list of stripped lines.
