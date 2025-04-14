@@ -465,11 +465,11 @@ class Router:
                 remote_ip = all_routers[voisin_ibgp].loopback_address
                 config_neighbors_ibgp += f"neighbor {remote_ip} remote-as {self.AS_number}\n \
                 neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n \
-                neighbor {remote_ip} send-community extended\n\
+                neighbor {remote_ip} send-community extended \n\
                 neighbor {remote_ip} activate\n"
-                config_address_family += f"address-family vpnv4\n \
+                config_address_family += f"address-family vpnv4 \n \
                 neighbor {remote_ip} activate \n \
-                neighbor {remote_ip} send-community extended\n \
+                neighbor {remote_ip} send-community extended \n \
                 exit-address-family\n"
             config_neighbors_ebgp = ""
             for voisin_ebgp in self.voisins_ebgp:
@@ -605,6 +605,6 @@ exit
             if self.dico_VRF_name != {}:
                 for (CE, PE), (VRF_name, RT, RD) in self.dico_VRF_name.items():
                    
-                    self.vrf_config += f"ip vrf {VRF_name}\nrd {RD}\nroute-target export {RT}\nroute-target import {RT}\n"
+                    self.vrf_config += f"Configure terminal \n ip vrf {VRF_name}\nrd {RD}\nroute-target export {RT}\nroute-target import {RT}\n"
                     
         
