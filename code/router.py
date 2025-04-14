@@ -380,10 +380,10 @@ class Router:
                     # Configuration VRF
                     vrf_config = ""
 
-                    # self.set_vrf_processus(autonomous_systems, all_routers)
-                    # if self.is_provider_edge(autonomous_systems, all_routers):
-                    #     if self.AS_number != neighbor_router.AS_number:
-                    #         vrf_config = f"ip vrf forwarding {self.dico_AS_number_VRF_processus[neighbor_router.AS_number]}\n" 
+                    self.set_vrf_processus(autonomous_systems, all_routers)
+                    if self.is_provider_edge(autonomous_systems, all_routers):
+                        if self.AS_number != neighbor_router.AS_number:
+                            vrf_config = f"ip vrf forwarding {self.dico_VRF_name[(link["hostname"] ,self.hostname)][0]}\n" 
 
                     self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n{vrf_config}\nno shutdown\nno ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n{ldp_config}\nexit\n"
 
@@ -476,7 +476,7 @@ class Router:
                 if self.is_provider_edge(autonomous_systems, all_routers):
                     remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
                     remote_as = all_routers[voisin_ebgp].AS_number
-                    config_address_family += f"adress-family ipv4 vrf {self.dico_VRF_name[(voisin_ebgp,self.hostname)][0]}\n \
+                    config_address_family += f"address-family ipv4 vrf {self.dico_VRF_name[(voisin_ebgp,self.hostname)][0]}\n \
                     neighbor {remote_ip} remote-as {remote_as}\n \
                     neighbour {remote_ip} activate\n \
                     redistribute connected\n \
