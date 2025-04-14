@@ -3,7 +3,6 @@
     "Les_AS": [
         {
             "ipv4_prefix": "192.168.1.0/24",
-<<<<<<< Updated upstream
             "AS_number": 100,
             "routers": [
                 "PE1",
@@ -40,7 +39,6 @@
             "internal_routing": "OSPF",
             "ipv4_loopback_prefix": "10.100.1.0/24"
 =======
-            "AS_number": 111,
             "routers": ["R1", "R2", "R3", "R4"],
             "internal_routing": "OSPF",
             "connected_AS": [[130, "peer", {"R1": "192.168.6.2/30","R4": "192.168.6.1/30"}]],
@@ -55,140 +53,8 @@
             "ipv4_loopback_prefix": "192.168.7.1/32"
 >>>>>>> Stashed changes
         }
-    ],
     "Les_routeurs": [
         {
-<<<<<<< Updated upstream
-            "hostname": "PE1",
-            "ipv4_loopback_address": "10.1.1.4/32",
-            "links": [
-                {
-                    "type": "Router",
-                    "hostname": "P1",
-                    "ipv4_address": "192.168.1.6/30"
-                },
-                {
-                    "type": "Router",
-                    "hostname": "CE1"
-                },
-                {
-                    "type": "Router",
-                    "hostname": "CE2"
-                }
-            ],
-            "AS_number": 111,
-            "position": {
-                "x": -500,
-                "y": 0
-            }
-        },
-        {
-            "hostname": "P1",
-            "ipv4_loopback_address": "10.1.1.2/32",
-            "links": [
-                {
-                    "type": "Router",
-                    "hostname": "P2"
-                },
-                {
-                    "type": "Router",
-                    "hostname": "PE1",
-                    "ipv4_address": "192.168.1.5/30"
-                }
-            ],
-            "AS_number": 111,
-            "position": {
-                "x": -250,
-                "y": 0
-            }
-        },
-        {
-            "hostname": "P2",
-            "ipv4_loopback_address": "10.1.1.1/32",
-            "links": [
-                {
-                    "type": "Router",
-                    "hostname": "P1"
-                },
-                {
-                    "type": "Router",
-                    "hostname": "PE2",
-                    "ipv4_address": "192.168.1.9/30"
-                }
-            ],
-            "AS_number": 111,
-            "position": {
-                "x": 250,
-                "y": 0
-            }
-        },
-        {
-            "hostname": "PE2",
-            "ipv4_loopback_address": "10.1.1.3/32",
-            "links": [
-                {
-                    "type": "Router",
-                    "hostname": "P2"
-                },
-                {
-                    "type": "Router",
-                    "hostname": "CE2"
-                },
-                {
-                    "type": "Router",
-                    "hostname": "CE4"
-                }
-            ],
-            "AS_number": 111,
-            "position": {
-                "x": 500,
-                "y": 0
-            }
-        },
-        {
-            "hostname": "CE1",
-            "links": [
-                {
-                    "type": "Router",
-                    "hostname": "PE1"
-                }
-            ],
-            "AS_number": 110
-        },
-        {
-            "hostname": "CE2",
-            "links": [
-                {
-                    "type": "Router",
-                    "hostname": "PE2"
-                }
-            ],
-            "AS_number": 110
-        },
-        {
-            "hostname": "CE3",
-            "links": [
-                {
-                    "type": "Router",
-                    "hostname": "PE1"
-                }
-            ],
-            "AS_number": 120
-        },
-        {
-            "hostname": "CE4",
-            "links": [
-                {
-                    "type": "Router",
-                    "hostname": "PE2"
-                }
-            ],
-            "AS_number": 120,
-            "position": {
-                "x": 700,
-                "y": -100
-            }
-=======
             "hostname": "R1",
             "links": [{"type": "Router", "hostname": "R2"}, {"type": "Router", "hostname": "CE2"}],
             "AS_number": 111
@@ -217,7 +83,6 @@
             "hostname": "CE2",
             "links": [{"type": "Router", "hostname": "R1"}],
             "AS_number": 130
->>>>>>> Stashed changes
         }
     ]
 }

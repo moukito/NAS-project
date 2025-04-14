@@ -273,7 +273,10 @@ class Router:
 
                             new_network_int = int(base_network) + (my_as.subnet_counter - 1) * subnet_size
                             new_network = IPv4Network(f"{IPv4Address(new_network_int)}/30", strict=False)
-
+                            print("\n")
+                            print("ici")
+                            print(self.hostname)
+                            print("\n")
                             self.network_address[link["hostname"]] = [str(new_network).split("/")[0]] + ["255.255.255.253"]
 
                             subnet = SubNetwork(new_network, 2)
@@ -423,10 +426,10 @@ class Router:
         sorties : changement de plusieurs attributs de l'objet, mais surtout de config_bgp qui contient le string de configuration à la fin de l'exécution de la fonction
         """
         my_as = autonomous_systems[self.AS_number]
-
+        
         for routers in my_as.routers : 
-            if routers.is_provider_edge() and routers.hostname != self.hostname:
-                self.voisins_ibgp.add(routers.hostname)
+            if all_routers[routers].is_provider_edge(autonomous_systems, all_routers) and routers.hostname != self.hostname:
+                self.voisins_ibgp.add(routers.hostname) 
                 
 
         for link in self.links:
@@ -469,10 +472,14 @@ class Router:
                 else:
                     remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
                     remote_as = all_routers[voisin_ebgp].AS_number
+                    print("\n")
+                    print(self.hostname)
+                    print("\n")
                     config_neighbors_ebgp += f"no synchronization\n \
                     bgp log-neighbor-changes\n \
                     neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n \
                     network {self.network_address[voisin_ebgp][0]} mask {self.network_address[voisin_ebgp][1]}\n"
+
 
                 config_address_family += f"exit\nexit\n"
                 self.config_bgp += config_neighbors_ibgp
