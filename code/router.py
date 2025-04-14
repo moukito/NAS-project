@@ -581,11 +581,17 @@ exit
     def set_vrf_processus(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
         global VRF_PROCESSUS
         global LAST_ID_RD
+        
         if self.is_provider_edge(autonomous_systems, all_routers):
             for link in self.links:
                 neighbor_router = all_routers[link["hostname"]]
                 if self.AS_number != neighbor_router.AS_number:
                     if VRF_PROCESSUS.get(f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}") is None:
+                        print("aaaaaaaaaaaaaaaaa \n")
+                        print(self.interface_per_link[link["hostname"]])
+                        print(self.hostname)
+                        print("\n")
+
                         VRF_PROCESSUS[(f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}", f"{self.AS_number}:1", f"{self.AS_number}:{LAST_ID_RD}")] = (self.interface_per_link[link["hostname"]], self.hostname)
                         self.dico_VRF_name[(self.interface_per_link[link["hostname"]], self.hostname)] = (f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}", f"{self.AS_number}:1", f"{self.AS_number}:{LAST_ID_RD}")
                         LAST_ID_RD += 1
@@ -598,6 +604,7 @@ exit
         if mode == "telnet":
             if self.dico_VRF_name != {}:
                 for (CE, PE), (VRF_name, RT, RD) in self.dico_VRF_name.items():
+                   
                     self.vrf_config += f"ip vrf {VRF_name}\nrd {RD}\nroute-target export {RT}\nroute-target import {RT}\n"
                     
         

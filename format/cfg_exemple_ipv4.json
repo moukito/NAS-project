@@ -13,7 +13,7 @@
             "internal_routing": "OSPF",
             "connected_AS":[[110, "peer", {"R1":"192.168.3.0/30", "R2": "192.168.3.4/30"}]],
             "ipv4_loopback_prefix": "10.1.1.0/24",
-            "LDP_activation": false
+            "LDP_activation": true
         },
         {
             "ipv4_prefix": "192.168.2.0/24",
@@ -34,8 +34,7 @@
             "links": [
                 {
                     "type": "Router",
-                    "hostname": "R3",
-                    "ipv4_address": "192.168.1.6/30"
+                    "hostname": "R3"
                 },
                 {
                     "type": "Router",
@@ -58,8 +57,7 @@
                 },
                 {
                     "type": "Router",
-                    "hostname": "R1",
-                    "ipv4_address": "192.168.1.5/30"
+                    "hostname": "R1"
                 }
             ],
             "AS_number": 111,
@@ -78,8 +76,7 @@
                 },
                 {
                     "type": "Router",
-                    "hostname": "R2",
-                    "ipv4_address": "192.168.1.9/30"
+                    "hostname": "R2"
                 }
             ],
             "AS_number": 111,
