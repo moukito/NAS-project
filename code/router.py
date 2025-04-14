@@ -179,6 +179,9 @@ class Router:
                     base_network -= 1
                 base_network = IPv4Address(".".join(addr.split(".")[:-1]) + ".0") + base_network
 
+                self.network_address[link["hostname"]] = [str(base_network).split("/")[0]] + ["255.255.255.253"]
+                all_routers[link["hostname"]].network_address[self.hostname] = [str(base_network).split("/")[0]] + ["255.255.255.253"]
+
                 if not self.subnetworks_per_link.get(link["hostname"], False):
                     if link["hostname"] in my_as.hashset_routers:
                         subnet = SubNetwork(IPv4Network(f"{IPv4Address(base_network)}/30", strict=False), 2)
@@ -273,11 +276,6 @@ class Router:
 
                             new_network_int = int(base_network) + (my_as.subnet_counter - 1) * subnet_size
                             new_network = IPv4Network(f"{IPv4Address(new_network_int)}/30", strict=False)
-                            print("\n")
-                            print("ici")
-                            print(self.hostname)
-                            print("\n")
-                            self.network_address[link["hostname"]] = [str(new_network).split("/")[0]] + ["255.255.255.253"]
 
                             subnet = SubNetwork(new_network, 2)
                         self.subnetworks_per_link[link['hostname']] = subnet
@@ -312,6 +310,9 @@ class Router:
                 network_addr = int(subnet.network_address)
 
                 ip_address = IPv4Address(network_addr + router_id)
+
+                self.network_address[link["hostname"]] = [str(subnet).split("/")[0]] + ["255.255.255.253"]
+                all_routers[link['hostname']].network_address[self.hostname] = [str(subnet).split("/")[0]] + ["255.255.255.253"]
 
             print(f"ROUTER {self.hostname}, NEIGHBOR {link}, INTERFACE {self.interface_per_link.get(link['hostname'])}, IP ADDRESS : {ip_address}")
             self.ip_per_link[link['hostname']] = ip_address
