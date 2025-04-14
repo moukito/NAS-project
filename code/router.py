@@ -380,10 +380,10 @@ class Router:
                     # Configuration VRF
                     vrf_config = ""
 
-                    self.set_vrf_processus(autonomous_systems, all_routers)
-                    if self.is_provider_edge(autonomous_systems, all_routers):
-                        if self.AS_number != neighbor_router.AS_number:
-                            vrf_config = f"ip vrf forwarding {self.dico_AS_number_VRF_processus[neighbor_router.AS_number]}\n" 
+                    # self.set_vrf_processus(autonomous_systems, all_routers)
+                    # if self.is_provider_edge(autonomous_systems, all_routers):
+                    #     if self.AS_number != neighbor_router.AS_number:
+                    #         vrf_config = f"ip vrf forwarding {self.dico_AS_number_VRF_processus[neighbor_router.AS_number]}\n" 
 
                     self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n{vrf_config}\nno shutdown\nno ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n{ldp_config}\nexit\n"
 
@@ -429,8 +429,19 @@ class Router:
         my_as = autonomous_systems[self.AS_number]
         
         for routers in my_as.routers : 
-            if all_routers[routers].is_provider_edge(autonomous_systems, all_routers) and routers.hostname != self.hostname:
-                self.voisins_ibgp.add(routers.hostname) 
+            print("\n")
+            print("la")
+            print(all_routers[routers].is_provider_edge(autonomous_systems, all_routers))
+            print(routers)
+            print(self.hostname)
+            print("\n")
+            if all_routers[routers].is_provider_edge(autonomous_systems, all_routers) and routers != self.hostname:
+                print("\n")
+                print("ici")
+                print(self.hostname)
+                print(routers)
+                print("\n")
+                self.voisins_ibgp.add(routers) 
                 
 
         for link in self.links:
@@ -465,7 +476,7 @@ class Router:
                 if self.is_provider_edge(autonomous_systems, all_routers):
                     remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
                     remote_as = all_routers[voisin_ebgp].AS_number
-                    config_address_family += f"adress-family ipv4 vrf {self.dico_VRF_name[(self.hostname,voisin_ebgp)][0]}\n \
+                    config_address_family += f"adress-family ipv4 vrf {self.dico_VRF_name[(voisin_ebgp,self.hostname)][0]}\n \
                     neighbor {remote_ip} remote-as {remote_as}\n \
                     neighbour {remote_ip} activate\n \
                     redistribute connected\n \
@@ -473,9 +484,6 @@ class Router:
                 else:
                     remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
                     remote_as = all_routers[voisin_ebgp].AS_number
-                    print("\n")
-                    print(self.hostname)
-                    print("\n")
                     config_neighbors_ebgp += f"no synchronization\n \
                     bgp log-neighbor-changes\n \
                     neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n \
