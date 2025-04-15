@@ -157,6 +157,7 @@ class Router:
         my_as = autonomous_systems[self.AS_number]
 
         for link in self.links:
+            neighbor_router = all_routers[link["hostname"]]
             if "ipv4_address" in link:
                 if not self.interface_per_link.get(link["hostname"], False):
                     interface_for_link = self.available_interfaces.pop(0)
