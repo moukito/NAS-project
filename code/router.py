@@ -463,31 +463,31 @@ class Router:
 
             for voisin_ibgp in self.voisins_ibgp:
                 remote_ip = all_routers[voisin_ibgp].loopback_address
-                config_neighbors_ibgp += f"neighbor {remote_ip} remote-as {self.AS_number}\n \
-                neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}\n \
-                neighbor {remote_ip} send-community extended \n\
-                neighbor {remote_ip} activate\n"
-                config_address_family += f"address-family vpnv4 \n \
-                neighbor {remote_ip} activate \n \
-                neighbor {remote_ip} send-community extended \n \
-                exit-address-family\n"
+                config_neighbors_ibgp += f"""neighbor {remote_ip} remote-as {self.AS_number}    
+neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}
+neighbor {remote_ip} send-community extended 
+neighbor {remote_ip} activate"""
+                config_address_family += f"""address-family vpnv4 
+neighbor {remote_ip} activate 
+neighbor {remote_ip} send-community extended 
+exit-address-family"""
             config_neighbors_ebgp = ""
             for voisin_ebgp in self.voisins_ebgp:
                 if self.is_provider_edge(autonomous_systems, all_routers):
                     remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
                     remote_as = all_routers[voisin_ebgp].AS_number
-                    config_address_family += f"address-family ipv4 vrf {self.dico_VRF_name[(voisin_ebgp,self.hostname)][0]}\n \
-                    neighbor {remote_ip} remote-as {remote_as}\n \
-                    neighbour {remote_ip} activate\n \
-                    redistribute connected\n \
-                    exit-address-family\n"
+                    config_address_family += f"""address-family ipv4 vrf {self.dico_VRF_name[(voisin_ebgp,self.hostname)][0]}
+neighbor {remote_ip} remote-as {remote_as}
+neighbor {remote_ip} activate
+redistribute connected
+exit-address-family"""
                 else:
                     remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
                     remote_as = all_routers[voisin_ebgp].AS_number
-                    config_neighbors_ebgp += f"no synchronization\n \
-                    bgp log-neighbor-changes\n \
-                    neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}\n \
-                    network {self.network_address[voisin_ebgp][0]} mask {self.network_address[voisin_ebgp][1]}\n"
+                    config_neighbors_ebgp += f"""no synchronization
+bgp log-neighbor-changes
+neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}
+network {self.network_address[voisin_ebgp][0]} mask {self.network_address[voisin_ebgp][1]}"""
 
 
                 config_address_family += f"exit\nexit\n"
@@ -586,11 +586,11 @@ exit
             for link in self.links:
                 neighbor_router = all_routers[link["hostname"]]
                 if self.AS_number != neighbor_router.AS_number:
+                    print("ici")
+                    print(self.hostname)
+                    print(link["hostname"])
+                    print(self.interface_per_link)
                     if VRF_PROCESSUS.get(f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}") is None:
-                        print("aaaaaaaaaaaaaaaaa \n")
-                        print(link["hostname"])
-                        print(self.hostname)
-                        print("\n")
 
                         VRF_PROCESSUS[(f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}", f"{self.AS_number}:1", f"{self.AS_number}:{LAST_ID_RD}")] = (link["hostname"], self.hostname)
                         self.dico_VRF_name[(link["hostname"], self.hostname)] = (f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}", f"{self.AS_number}:1", f"{self.AS_number}:{LAST_ID_RD}")
