@@ -239,9 +239,21 @@ class Router:
                             extra_config = f"ip ospf {NOM_PROCESSUS_IGP_PAR_DEFAUT} area 0\n ip ospf cost {link["ospf_cost"]}\n"
                     elif my_as.internal_routing == "RIP":
                         extra_config = f"ip rip {NOM_PROCESSUS_IGP_PAR_DEFAUT} enable\n"
+                    
+                    # Configuration LDP
+                    ldp_config = ""
+                    if autonomous_systems[neighbor_router.AS_number].LDP_activation and autonomous_systems[self.AS_number].LDP_activation:
+                        ldp_config += "mpls ip\n"
+                    
+                    # Configuration VRF
+                    vrf_config = ""
+                    self.set_vrf_processus(autonomous_systems, all_routers)
+                    if self.is_provider_edge(autonomous_systems, all_routers):
+                        if self.AS_number != neighbor_router.AS_number:
+                            vrf_config = f"ip vrf forwarding {self.dico_VRF_name[(link["hostname"] ,self.hostname)][0]}\n" 
 
                     mask = str(self.subnetworks_per_link[link["hostname"]].network_address.netmask)
-                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n no shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n exit\n"
+                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n{vrf_config}\nno shutdown\n no ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n{ldp_config}exit\n"
 
     def set_interface_configuration_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"], mode: str):
         """
@@ -379,13 +391,12 @@ class Router:
                     
                     # Configuration VRF
                     vrf_config = ""
-
                     self.set_vrf_processus(autonomous_systems, all_routers)
                     if self.is_provider_edge(autonomous_systems, all_routers):
                         if self.AS_number != neighbor_router.AS_number:
                             vrf_config = f"ip vrf forwarding {self.dico_VRF_name[(link["hostname"] ,self.hostname)][0]}\n" 
 
-                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n{vrf_config}\nno shutdown\nno ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n{ldp_config}\nexit\n"
+                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\n {vrf_config}\nno shutdown\nno ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n{ldp_config}\nexit\n"
 
         return 1
                 

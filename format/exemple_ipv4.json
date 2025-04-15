@@ -35,7 +35,8 @@
                 {
                     "type": "Router",
                     "hostname": "P1",
-                    "ipv4_address": "192.168.1.6/30"
+                    "ipv4_address": "192.168.1.6/30",
+                    "ospf_cost": 2
                 },
                 {
                     "type": "Router",
@@ -79,7 +80,8 @@
                 {
                     "type": "Router",
                     "hostname": "PE2",
-                    "ipv4_address": "192.168.1.9/30"
+                    "ipv4_address": "192.168.1.9/30",
+                    "ospf_cost": 2
                 }
             ],
             "AS_number": 111,
