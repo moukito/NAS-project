@@ -453,8 +453,9 @@ class Router:
                 
         if mode == "telnet":
             # todo : telnet commands
-            self.config_bgp = f"router bgp {self.AS_number}\n \
-            bgp router-id {self.router_id}.{self.router_id}.{self.router_id}.{self.router_id}\n"
+            self.config_bgp = f"""router bgp {self.AS_number}
+bgp router-id {self.router_id}.{self.router_id}.{self.router_id}.{self.router_id}
+"""
             config_address_family = ""
             if my_as.ip_version == 6:
                 config_neighbors_ibgp = "address-family ipv6 unicast\n"
@@ -466,11 +467,12 @@ class Router:
                 config_neighbors_ibgp += f"""neighbor {remote_ip} remote-as {self.AS_number}    
 neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}
 neighbor {remote_ip} send-community extended 
-neighbor {remote_ip} activate"""
+neighbor {remote_ip} activate
+"""
                 config_address_family += f"""address-family vpnv4 
 neighbor {remote_ip} activate 
 neighbor {remote_ip} send-community extended 
-exit-address-family"""
+"""
             config_neighbors_ebgp = ""
             for voisin_ebgp in self.voisins_ebgp:
                 if self.is_provider_edge(autonomous_systems, all_routers):
@@ -480,14 +482,15 @@ exit-address-family"""
 neighbor {remote_ip} remote-as {remote_as}
 neighbor {remote_ip} activate
 redistribute connected
-exit-address-family"""
+"""
                 else:
                     remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
                     remote_as = all_routers[voisin_ebgp].AS_number
                     config_neighbors_ebgp += f"""no synchronization
 bgp log-neighbor-changes
 neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}
-network {self.network_address[voisin_ebgp][0]} mask {self.network_address[voisin_ebgp][1]}"""
+network {self.network_address[voisin_ebgp][0]} mask {self.network_address[voisin_ebgp][1]}
+"""
 
 
                 config_address_family += f"exit\nexit\n"
@@ -541,7 +544,7 @@ router bgp {self.AS_number}
     def set_ldp_config_data(self, autonomous_systems: dict[int, AS], mode: str):
         if autonomous_systems[self.AS_number].LDP_activation:
             if mode == "telnet":
-                self.ldp_config = f"mpls ip\nmpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
+                self.ldp_config = f"configure terminal\nmpls ip\nmpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force\n"
             elif mode == "cfg":
                 self.ldp_config = f"""
 mpls ldp router-id {STANDARD_LOOPBACK_INTERFACE} force
