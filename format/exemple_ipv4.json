@@ -34,12 +34,11 @@
             "links": [
                 {
                     "type": "Router",
-                    "hostname": "P1",
-                    "ipv4_address": "192.168.1.6/30"
+                    "hostname": "CE1"
                 },
                 {
                     "type": "Router",
-                    "hostname": "CE1"
+                    "hostname": "P1"
                 }
             ],
             "AS_number": 111,
@@ -58,8 +57,7 @@
                 },
                 {
                     "type": "Router",
-                    "hostname": "PE1",
-                    "ipv4_address": "192.168.1.5/30"
+                    "hostname": "PE1"
                 }
             ],
             "AS_number": 111,
@@ -78,8 +76,7 @@
                 },
                 {
                     "type": "Router",
-                    "hostname": "PE2",
-                    "ipv4_address": "192.168.1.9/30"
+                    "hostname": "PE2"
                 }
             ],
             "AS_number": 111,
@@ -94,11 +91,11 @@
             "links": [
                 {
                     "type": "Router",
-                    "hostname": "P2"
+                    "hostname": "CE2"
                 },
                 {
                     "type": "Router",
-                    "hostname": "CE2"
+                    "hostname": "P2"
                 }
             ],
             "AS_number": 111,
