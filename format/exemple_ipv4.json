@@ -25,6 +25,17 @@
             "connected_AS":[[111, "peer", {"CE1":"192.168.3.0/30", "CE2": "192.168.3.4/30"}]],
             "ipv4_loopback_prefix": "10.1.2.0/24",
             "internal_routing": "OSPF"
+        },
+        {
+            "ipv4_prefix": "192.168.3.0/24",
+            "AS_number": 112,
+            "routers": [
+                "CE3",
+                "CE4"
+            ],
+            "connected_AS":[[111, "peer", {"CE3":"192.168.3.0/30", "CE4": "192.168.3.4/30"}]],
+            "ipv4_loopback_prefix": "10.1.3.0/24",
+            "internal_routing": "OSPF"
         }
     ],
     "Les_routeurs": [
@@ -34,11 +45,16 @@
             "links": [
                 {
                     "type": "Router",
+                    "hostname": "P1",
+                    "ipv4_address": "192.168.1.6/30"
+                },
+                {
+                    "type": "Router",
                     "hostname": "CE1"
                 },
                 {
                     "type": "Router",
-                    "hostname": "P1"
+                    "hostname": "CE3"
                 }
             ],
             "AS_number": 111,
@@ -57,7 +73,8 @@
                 },
                 {
                     "type": "Router",
-                    "hostname": "PE1"
+                    "hostname": "PE1",
+                    "ipv4_address": "192.168.1.5/30"
                 }
             ],
             "AS_number": 111,
@@ -76,7 +93,8 @@
                 },
                 {
                     "type": "Router",
-                    "hostname": "PE2"
+                    "hostname": "PE2",
+                    "ipv4_address": "192.168.1.9/30"
                 }
             ],
             "AS_number": 111,
@@ -91,11 +109,15 @@
             "links": [
                 {
                     "type": "Router",
+                    "hostname": "P2"
+                },
+                {
+                    "type": "Router",
                     "hostname": "CE2"
                 },
                 {
                     "type": "Router",
-                    "hostname": "P2"
+                    "hostname": "CE4"
                 }
             ],
             "AS_number": 111,
@@ -123,6 +145,26 @@
                 }
             ],
             "AS_number": 110
+        },
+        {
+            "hostname": "CE3",
+            "links": [
+                {
+                    "type": "Router",
+                    "hostname": "PE1"
+                }
+            ],
+            "AS_number": 112
+        },
+        {
+            "hostname": "CE4",
+            "links": [
+                {
+                    "type": "Router",
+                    "hostname": "PE2"
+                }
+            ],
+            "AS_number": 112
         }
     ]
 }
