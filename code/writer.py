@@ -288,6 +288,15 @@ def get_all_telnet_commands(AS: AS, router: "Router"):
 			for passive in router.passive_interfaces:
 				commands.append(f"passive-interface {passive}")
 			commands.append("exit")
+	# Configuration VRF
+	for command in router.vrf_config.strip().split('\n'):
+		if command != '':
+			commands.append(command)
+
+	# Configuration LDP
+	for command in router.ldp_config.strip().split('\n'):
+		if command != '':
+			commands.append(command)
 
 	# Configuration du loopback
 	for command in router.internal_routing_loopback_config.strip().split('\n'):
@@ -305,15 +314,6 @@ def get_all_telnet_commands(AS: AS, router: "Router"):
 		if command != '':
 			commands.append(command)
 
-	# Configuration LDP
-	for command in router.ldp_config.strip().split('\n'):
-		if command != '':
-			commands.append(command)
-
-	# Configuration VRF
-	for command in router.vrf_config.strip().split('\n'):
-		if command != '':
-			commands.append(command)
 
 	commands.append("exit")
 	commands.append("end")
