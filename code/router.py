@@ -476,7 +476,7 @@ class Router:
                 if self.is_provider_edge(autonomous_systems, all_routers):
                     remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
                     remote_as = all_routers[voisin_ebgp].AS_number
-                    config_address_family += f"adress-family ipv4 vrf {self.dico_VRF_name[(voisin_ebgp,self.hostname)][0]}\n \
+                    config_address_family += f"address-family ipv4 vrf {self.dico_VRF_name[(voisin_ebgp,self.hostname)][0]}\n \
                     neighbor {remote_ip} remote-as {remote_as}\n \
                     neighbour {remote_ip} activate\n \
                     redistribute connected\n \
