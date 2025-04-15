@@ -491,9 +491,6 @@ bgp log-neighbor-changes
 neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}
 network {self.network_address[voisin_ebgp][0]} mask {self.network_address[voisin_ebgp][1]}
 """
-
-
-                config_address_family += f"exit\nexit\n"
                 self.config_bgp += config_neighbors_ibgp
                 self.config_bgp += config_neighbors_ebgp
                 self.config_bgp += config_address_family

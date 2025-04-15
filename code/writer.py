@@ -313,6 +313,7 @@ def get_all_telnet_commands(AS: AS, router: "Router"):
 	for command in router.config_bgp.strip().split('\n'):
 		if command != '':
 			commands.append(command)
+			commands.append("exit\nexit\n")
 
 
 	commands.append("exit")
