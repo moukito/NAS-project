@@ -575,22 +575,21 @@ exit
         if self.is_provider_edge(autonomous_systems, all_routers):
             for link in self.links:
                 neighbor_router = all_routers[link["hostname"]]
-                if neighbor_router.VPN_family is None:
+                if (neighbor_router.VPN_family is None) or (self.AS_number == neighbor_router.AS_number):
                     continue
-                if self.AS_number != neighbor_router.AS_number:
-                    VRF_name = f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}"
-                    RT = ""
-                    RD = f"rd {neighbor_router.AS_number}:{LAST_ID_RD}\n"
-                    for number in nneighbor_router.VPN_family:
-                        RT += f"route-target import {neighbor_router.AS_number}:{number}\nroute-target export {neighbor_router.AS_number}:{number}\n"
-                    if VRF_PROCESSUS.get((VRF_name, RT, RD)) is None:
-                        VRF_PROCESSUS[(VRF_name, RT, RD)] = (link["hostname"], self.hostname)
-                        print(link["hostname"])
-                        print(self.hostname)
-                        self.dico_VRF_name[(link["hostname"], self.hostname)] = (VRF_name, RT, RD)
-                        LAST_ID_RD += 1
-                    else:
-                        self.dico_VRF_name[(link["hostname"], self.hostname)] = (VRF_name, RT, RD)
+                VRF_name = f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}"
+                RT = ""
+                RD = f"rd {neighbor_router.AS_number}:{LAST_ID_RD}\n"
+                for number in neighbor_router.VPN_family:
+                    RT += f"route-target import {neighbor_router.AS_number}:{number}\nroute-target export {neighbor_router.AS_number}:{number}\n"
+                if VRF_PROCESSUS.get((VRF_name, RT, RD)) is None:
+                    VRF_PROCESSUS[(VRF_name, RT, RD)] = (link["hostname"], self.hostname)
+                    print(link["hostname"])
+                    print(self.hostname)
+                    self.dico_VRF_name[(link["hostname"], self.hostname)] = (VRF_name, RT, RD)
+                    LAST_ID_RD += 1
+                else:
+                    self.dico_VRF_name[(link["hostname"], self.hostname)] = (VRF_name, RT, RD)
 
     def set_vrf_config_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"], mode: str):
         self.set_vrf_processus(autonomous_systems, all_routers)
@@ -602,6 +601,10 @@ exit
     def interface_vrf_config_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
         # Configuration VRF au niveau des interfaces
         for link in self.links:
+            print(link["hostname"])
+            print(self.hostname)
+            print(all_routers[link["hostname"]].VPN_family)
+            print("\n")
             neighbor_hostname = link["hostname"]
             neighbor_router = all_routers[neighbor_hostname]
             if self.is_provider_edge(autonomous_systems, all_routers):
