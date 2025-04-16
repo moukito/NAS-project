@@ -109,8 +109,9 @@ def parse_intent_file(file_path: str) -> tuple[list[AS], list[Router]]:
             hostname = router["hostname"]
             links = router["links"]
             as_number = router["AS_number"]
+            VPN = router.get("VPN", None)
             position = router.get("position", {"x": 0, "y": 0})
-            new_router = Router(hostname, links, as_number, position, ip_version)
+            new_router = Router(hostname, links, as_number, position, ip_version, VPN)
             
             ipv6_loopback_address = router.get("ipv6_loopback_address", None)
                 
