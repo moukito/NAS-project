@@ -252,6 +252,7 @@ class Router:
 
                     mask = str(self.subnetworks_per_link[link["hostname"]].network_address.netmask)
                     self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\nno shutdown\nno ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n{ldp_config}exit\n"
+                    self.config_str_per_link[link["hostname"]] = f"interface {self.interface_per_link[link["hostname"]]}\nno shutdown\nno ipv6 address\nip address {str(ip_address)} {mask}\n{extra_config}\n{ldp_config}\nexit\n"
 
     def set_interface_configuration_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"], mode: str):
         """
