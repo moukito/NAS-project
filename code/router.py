@@ -18,12 +18,10 @@ from writer import LINKS_STANDARD, NOM_PROCESSUS_IGP_PAR_DEFAUT, STANDARD_LOOPBA
 from ipaddress import IPv6Address, IPv4Address, IPv6Network, IPv4Network
 VRF_PROCESSUS = {}
 LAST_ID_RD = 1
-LAST_ID_RT = 1
-SECOND_NUM_RT = {}
 
 
 class Router:
-    def __init__(self, hostname: str, links, AS_number: int, position=None, ip_version: int = 6, VPN):
+    def __init__(self, hostname: str, links, AS_number: int, position=None, ip_version: int = 6, VPN_family=None):
         """Initialize a Router object with the given parameters.
         
         Args:
@@ -37,7 +35,7 @@ class Router:
         self.links = links
         self.AS_number = AS_number
         self.ip_version = ip_version
-        self.VPN = VPN
+        self.VPN_family = VPN_family
         self.passive_interfaces = set()
         self.loopback_interfaces = set()
         self.counter_loopback_interfaces = 0
@@ -570,15 +568,6 @@ exit
     def is_other(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
         return not self.is_provider_edge(autonomous_systems, all_routers) and not self.is_provider(autonomous_systems, all_routers)
     
-    def define_dico_customer_rt(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
-        global LAST_ID_RT
-        global SECOND_NUM_RT
-        if self.VPN is not None and self.is_other(autonomous_systems, all_routers):
-            for customer in self.VPN:
-                if SECOND_NUM_RT.get(customer) is None:
-                    SECOND_NUM_RT[customer] = LAST_ID_RT
-                    LAST_ID_RT += 1
-    
     def set_vrf_processus(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
         global VRF_PROCESSUS
         global LAST_ID_RD
@@ -586,37 +575,29 @@ exit
         if self.is_provider_edge(autonomous_systems, all_routers):
             for link in self.links:
                 neighbor_router = all_routers[link["hostname"]]
-                neighbor_router_VPN = neighbor_router["VPN"]
-                if self.AS_number != neighbor_router.AS_number and neighbor_router_VPN is not None:
+                if neighbor_router.VPN_family is None:
+                    continue
+                if self.AS_number != neighbor_router.AS_number:
                     VRF_name = f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}"
                     RT = ""
                     RD = f"rd {neighbor_router.AS_number}:{LAST_ID_RD}\n"
-                    for customer in neighbor_router_VPN:
-                        RT += f"route-target {neighbor_router.AS_number}:{}"
-                    if VRF_PROCESSUS.get(f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}") is None:
-                        VRF_PROCESSUS[(f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}", 
-                                    f"{neighbor_router.AS_number}:{SECOND_NUM_RT[neighbor_router_VPN]}",
-                                    f"{neighbor_router.AS_number}:{LAST_ID_RD}")] 
-                        = (link["hostname"], self.hostname)
-                        self.dico_VRF_name[(link["hostname"], self.hostname)] 
-                        = (f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}",
-                        f"{neighbor_router.AS_number}:1",
-                        f"{neighbor_router.AS_number}:{LAST_ID_RD}")
+                    for number in nneighbor_router.VPN_family:
+                        RT += f"route-target import {neighbor_router.AS_number}:{number}\nroute-target export {neighbor_router.AS_number}:{number}\n"
+                    if VRF_PROCESSUS.get((VRF_name, RT, RD)) is None:
+                        VRF_PROCESSUS[(VRF_name, RT, RD)] = (link["hostname"], self.hostname)
+                        print(link["hostname"])
+                        print(self.hostname)
+                        self.dico_VRF_name[(link["hostname"], self.hostname)] = (VRF_name, RT, RD)
                         LAST_ID_RD += 1
                     else:
-                        self.dico_VRF_name[(link["hostname"], self.hostname)] = 
-                        (f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}",
-                            f"{neighbor_router.AS_number}:1",
-                            f"{neighbor_router.AS_number}:{LAST_ID_RD}")
-                    
+                        self.dico_VRF_name[(link["hostname"], self.hostname)] = (VRF_name, RT, RD)
 
     def set_vrf_config_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"], mode: str):
         self.set_vrf_processus(autonomous_systems, all_routers)
         if mode == "telnet":
             if self.dico_VRF_name != {}:
                 for (CE, PE), (VRF_name, RT, RD) in self.dico_VRF_name.items():
-                   
-                    self.vrf_config += f"ip vrf {VRF_name}\nrd {RD}\nroute-target export {RT}\nroute-target import {RT}\n"
+                    self.vrf_config += f"ip vrf {VRF_name}\n{RD}\n{RT}\n"
     
     def interface_vrf_config_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
         # Configuration VRF au niveau des interfaces
