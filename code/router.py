@@ -18,10 +18,12 @@ from writer import LINKS_STANDARD, NOM_PROCESSUS_IGP_PAR_DEFAUT, STANDARD_LOOPBA
 from ipaddress import IPv6Address, IPv4Address, IPv6Network, IPv4Network
 VRF_PROCESSUS = {}
 LAST_ID_RD = 1
+LAST_ID_RT = 1
+SECOND_NUM_RT = {}
 
 
 class Router:
-    def __init__(self, hostname: str, links, AS_number: int, position=None, ip_version: int = 6):
+    def __init__(self, hostname: str, links, AS_number: int, position=None, ip_version: int = 6, VPN):
         """Initialize a Router object with the given parameters.
         
         Args:
@@ -35,6 +37,7 @@ class Router:
         self.links = links
         self.AS_number = AS_number
         self.ip_version = ip_version
+        self.VPN = VPN
         self.passive_interfaces = set()
         self.loopback_interfaces = set()
         self.counter_loopback_interfaces = 0
@@ -59,6 +62,7 @@ class Router:
         self.ldp_config = ""
         self.vrf_config = ""
         self.network_address = {}
+        self.dico_customer_rt = {}
         self.dico_VRF_name = {}
         self.dico_VRF_config_per_link = {}
         self.part_config_str_per_link = {}
@@ -434,18 +438,7 @@ class Router:
         my_as = autonomous_systems[self.AS_number]
         
         for routers in my_as.routers : 
-            print("\n")
-            print("la")
-            print(all_routers[routers].is_provider_edge(autonomous_systems, all_routers))
-            print(routers)
-            print(self.hostname)
-            print("\n")
             if all_routers[routers].is_provider_edge(autonomous_systems, all_routers) and routers != self.hostname:
-                print("\n")
-                print("ici")
-                print(self.hostname)
-                print(routers)
-                print("\n")
                 self.voisins_ibgp.add(routers) 
                 
         for link in self.links:
@@ -574,6 +567,18 @@ exit
                 break
         return autonomous_systems[self.AS_number].LDP_activation and connected_with_routers_LDP
                 
+    def is_other(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
+        return not self.is_provider_edge(autonomous_systems, all_routers) and not self.is_provider(autonomous_systems, all_routers)
+    
+    def define_dico_customer_rt(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
+        global LAST_ID_RT
+        global SECOND_NUM_RT
+        if self.VPN is not None and self.is_other(autonomous_systems, all_routers):
+            for customer in self.VPN:
+                if SECOND_NUM_RT.get(customer) is None:
+                    SECOND_NUM_RT[customer] = LAST_ID_RT
+                    LAST_ID_RT += 1
+    
     def set_vrf_processus(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
         global VRF_PROCESSUS
         global LAST_ID_RD
@@ -581,18 +586,28 @@ exit
         if self.is_provider_edge(autonomous_systems, all_routers):
             for link in self.links:
                 neighbor_router = all_routers[link["hostname"]]
-                if self.AS_number != neighbor_router.AS_number:
-                    print("ici")
-                    print(self.hostname)
-                    print(link["hostname"])
-                    print(self.interface_per_link)
+                neighbor_router_VPN = neighbor_router["VPN"]
+                if self.AS_number != neighbor_router.AS_number and neighbor_router_VPN is not None:
+                    VRF_name = f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}"
+                    RT = ""
+                    RD = f"rd {neighbor_router.AS_number}:{LAST_ID_RD}\n"
+                    for customer in neighbor_router_VPN:
+                        RT += f"route-target {neighbor_router.AS_number}:{}"
                     if VRF_PROCESSUS.get(f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}") is None:
-
-                        VRF_PROCESSUS[(f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}", f"{neighbor_router.AS_number}:1", f"{neighbor_router.AS_number}:{LAST_ID_RD}")] = (link["hostname"], self.hostname)
-                        self.dico_VRF_name[(link["hostname"], self.hostname)] = (f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}", f"{neighbor_router.AS_number}:1", f"{neighbor_router.AS_number}:{LAST_ID_RD}")
+                        VRF_PROCESSUS[(f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}", 
+                                    f"{neighbor_router.AS_number}:{SECOND_NUM_RT[neighbor_router_VPN]}",
+                                    f"{neighbor_router.AS_number}:{LAST_ID_RD}")] 
+                        = (link["hostname"], self.hostname)
+                        self.dico_VRF_name[(link["hostname"], self.hostname)] 
+                        = (f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}",
+                        f"{neighbor_router.AS_number}:1",
+                        f"{neighbor_router.AS_number}:{LAST_ID_RD}")
                         LAST_ID_RD += 1
                     else:
-                        self.dico_VRF_name[(link["hostname"], self.hostname)] = (f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}", f"{neighbor_router.AS_number}:1", f"{neighbor_router.AS_number}:{LAST_ID_RD}")
+                        self.dico_VRF_name[(link["hostname"], self.hostname)] = 
+                        (f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}",
+                            f"{neighbor_router.AS_number}:1",
+                            f"{neighbor_router.AS_number}:{LAST_ID_RD}")
                     
 
     def set_vrf_config_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"], mode: str):
