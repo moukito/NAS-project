@@ -162,6 +162,7 @@
                 }
             ],
             "AS_number": 110,
+            "VPN_family": ["1"],
             "position": {
                 "x": -325,
                 "y": -100
@@ -176,6 +177,7 @@
                 }
             ],
             "AS_number": 110,
+            "VPN_family": ["1"],
             "position": {
                 "x": 525,
                 "y": -100
@@ -190,6 +192,7 @@
                 }
             ],
             "AS_number": 112,
+            "VPN_family": ["1", "2"],
             "position": {
                 "x": -325,
                 "y": 100
@@ -204,6 +207,7 @@
                 }
             ],
             "AS_number": 112,
+            "VPN_family": ["1"],
             "position": {
                 "x": 525,
                 "y": 100
@@ -218,6 +222,7 @@
                 }
             ],
             "AS_number": 110,
+            "VPN_family": ["1"],
             "position": {
                 "x": 100,
                 "y": -275
@@ -232,6 +237,7 @@
                 }
             ],
             "AS_number": 112,
+            "VPN_family": ["2"],
             "position": {
                 "x": 300,
                 "y": -275
