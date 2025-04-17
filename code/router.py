@@ -472,8 +472,9 @@ neighbor {remote_ip} send-community extended
                     config_address_family += f"""address-family ipv4 vrf {self.dico_VRF_name[(voisin_ebgp,self.hostname)][0]}
 neighbor {remote_ip} remote-as {remote_as}
 neighbor {remote_ip} activate
-redistribute connected
 """
+                    if my_as.connected_AS_dict[remote_as][0] != "client":
+                        config_address_family += f"neighbor {remote_ip} route-map General-OUT out\n"
                 else:
                     remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
                     remote_as = all_routers[voisin_ebgp].AS_number
