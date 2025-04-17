@@ -31,6 +31,11 @@ Repository du code pour le projet NAS en 3TC
             - "interface" : OPTIONNEL, l'interface physique complète que ce lien doit utiliser, permet de contrôler l'allocation des interfaces pour différents liens si nécessaire (forcer un lien vers un autre AS à utiliser une interface rapide par exemple)
             - "ospf_cost" : OPTIONNEL, permet de donner un coût entier OSPF strictement positif à un lien, écrasant la valeur calculée par le routeur si cette configuration n'est pas fournie
             - REMARQUE : Il ne peut pas y avoir plusieurs liens par interface, et on doit avoir len(links) ≤ (nombre d'interfaces physiques sur le routeur)
+        - "VPN_family" : NECESSAIRE pour les CE, sinon les route-target import/export vont générer des erreurs. C'est une liste des str(int) qui indique la famille de VPN 
+            - EXEMPLE D'UTILISATION: CE1, CE2 et CE3 sont dans le même AS
+                - Si on veut que CE1, CE2 et CE3 puissent se communiquer, on met "VPN_family" = ['1'] pour tout ces CE
+                - Si on veut que CE1 puisse communiquer avec CE2 et CE3, et que CE2 et CE3 ne puissent pas se communiquer, on met "VPN_family" = ['1', '2'] pour CE1, "VPN_family" = ['1'] pour CE2, et "VPN_family" = ['2']
+                - VPN_family pour les différents AS sont distingués, ie on peut mettre ['1'] pour un CE d'un AS et ['1'] pour un CE de l'autre AS
         - "position" : dictionnaire donnant la position 2D où mettre le routeur dans le projet GNS3
             - "x" : position entière positive horizontale
             - "y" : position entière positive verticale
@@ -43,6 +48,7 @@ Repository du code pour le projet NAS en 3TC
 - La relation entre les AS doit être consistante
 - Un routeur ne peut appartenir qu'à une seule AS
 - Les interfaces ne peuvent avoir de doublon
+- VPN_family est nécessaire pour les CE dans le ficher d'intention
 
 ## Exécution
 - testé et codé pour python 3.12.x
@@ -58,7 +64,7 @@ Repository du code pour le projet NAS en 3TC
     - Addressing : Automatique ou manuel si spécifié dans le fichier d'intention
     - Protocoles : oui
     - router reflector : oui
-    - VPN sharing : non (en cours...)
+    - VPN sharing : oui et sous forme d'une famille de CE
     - Policies
         - BGP Policies : oui
         - OSPF Metric Optimization : oui si spécifié dans le fichier d'intention

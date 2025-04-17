@@ -594,6 +594,9 @@ exit
 """
             
     def is_provider_edge(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
+        """
+        Détermine si le routeur est un provider edge (PE).
+        """
         connected_with_another_as = False
         for link in self.links:
             if self.AS_number != all_routers[link['hostname']].AS_number:
@@ -602,6 +605,9 @@ exit
         return autonomous_systems[self.AS_number].LDP_activation and connected_with_another_as
     
     def is_provider(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
+        """
+        Détermine si le routeur est un provider (P).
+        """
         connected_with_routers_LDP = True
         for link in self.links:
             if self.AS_number != all_routers[link['hostname']].AS_number:
@@ -610,9 +616,19 @@ exit
         return autonomous_systems[self.AS_number].LDP_activation and connected_with_routers_LDP
                 
     def is_other(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
+        """
+        Détermine si le routeur est un customer edge (CE).
+        """
         return not self.is_provider_edge(autonomous_systems, all_routers) and not self.is_provider(autonomous_systems, all_routers)
     
     def set_vrf_processus(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
+        """
+        Injecte les processus VRF de niveau configure terminal dans le routeur self.                                            
+        Détails :
+        - Définition du nom de VRF : "VRF_<interface>_<hostname>"
+        - Définition de la route-distinguisher : "rd <AS_number>:<unique_number>"
+        - Définition de la route-target : "route-target import <AS_number>:<VPN_family_associated_number>"
+        """
         global VRF_PROCESSUS
         global LAST_ID_RD
         
@@ -636,6 +652,9 @@ exit
                     self.dico_VRF_name[(link["hostname"], self.hostname)] = (VRF_name, RT, RD)
 
     def set_vrf_config_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"], mode: str):
+        """
+        Génère la configuration VRF du niveau CONFIGURE TERMINAL du routeur self.
+        """
         self.set_vrf_processus(autonomous_systems, all_routers)
         if mode == "telnet":
             if self.dico_VRF_name != {}:
@@ -643,7 +662,9 @@ exit
                     self.vrf_config += f"ip vrf {VRF_name}\n{RD}\n{RT}\n"
     
     def interface_vrf_config_data(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"]):
-        # Configuration VRF au niveau des interfaces
+        """ 
+        Injecte les processus VRF de niveau des INTERFACES dans le routeur self. 
+        """
         for link in self.links:
             print(link["hostname"])
             print(self.hostname)
@@ -659,6 +680,9 @@ exit
                         self.dico_VRF_config_per_link[neighbor_hostname] += f"ip vrf forwarding {self.dico_VRF_name[(link["hostname"] ,self.hostname)][0]}\n"
     
     def set_all_interface_vrf_config(self, autonomous_systems: dict[int, AS], all_routers: dict[str, "Router"], mode: str):
+        """
+        Génère la configuration VRF du niveau des INTERFACES du routeur self.
+        """
         self.interface_vrf_config_data(autonomous_systems, all_routers)
         if mode == "telnet":
             if self.dico_VRF_config_per_link != {}:
