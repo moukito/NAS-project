@@ -8,7 +8,7 @@ Repository du code pour le projet NAS en 3TC
     - contient une liste de dictionnaires d'informations pour chaque AS :
         - "ipv4_prefix" : le préfixe IPv4 du réseau, **doit être unique** et 
           sous cette forme : `192.168.1.0/24`
-        - "AS_number":le AS number, **doit être unique**
+        - "AS_number" : le AS number, **doit être unique**
         - "routers" : la liste des hostname des routeurs appartenant à l'AS (**attention, ne pas mettre 1 routeur dans plusieurs AS !**)
         - "internal_routing" : le nom du protocole de routage interne, seuls "RIP" et "OSPF" sont corrects
         - "connected_AS" : une liste de "tuples" de 3 élements :
@@ -29,6 +29,15 @@ Repository du code pour le projet NAS en 3TC
         - "position" : dictionnaire donnant la position 2D où mettre le routeur dans le projet GNS3
             - "x" : position entière positive horizontale
             - "y" : position entière positive verticale
+
+### Important Constraints
+- Hostname unique pour chaque routeur
+- Les addresses IPV4 spécifiées dans le fichier doivent être unique
+- Le numéro d'AS doit être unique et chaque routeurs doivent être assigné à 
+  une AS existante
+- La relation entre les AS doit être consistante
+- Un routeur ne peut appartenir qu'à une seule AS
+- Les interfaces ne peuvent avoir de doublon
 
 ## Exécution
 - testé et codé pour python 3.12.x
