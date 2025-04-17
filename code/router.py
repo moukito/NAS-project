@@ -444,48 +444,91 @@ class Router:
                 
         if mode == "telnet":
             # todo : telnet commands
-            self.config_bgp = f"""router bgp {self.AS_number}
-bgp router-id {self.router_id}.{self.router_id}.{self.router_id}.{self.router_id}
-"""
-            config_address_family = ""
-            if my_as.ip_version == 6:
-                config_neighbors_ibgp = "address-family ipv6 unicast\n"
-            else:
-                config_neighbors_ibgp = "bgp log-neighbor-changes\n"
+            if self.hostname != "PE1":
 
-            for voisin_ibgp in self.voisins_ibgp:
-                remote_ip = all_routers[voisin_ibgp].loopback_address
-                config_neighbors_ibgp += f"""neighbor {remote_ip} remote-as {self.AS_number}    
-neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}
-neighbor {remote_ip} send-community extended 
-neighbor {remote_ip} activate
-"""
-                config_address_family += f"""address-family vpnv4 
-neighbor {remote_ip} activate 
-neighbor {remote_ip} send-community extended 
-"""
-            config_neighbors_ebgp = ""
-            for voisin_ebgp in self.voisins_ebgp:
-                if self.is_provider_edge(autonomous_systems, all_routers):
-                    remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
-                    remote_as = all_routers[voisin_ebgp].AS_number
-                    config_address_family += f"""address-family ipv4 vrf {self.dico_VRF_name[(voisin_ebgp,self.hostname)][0]}
-neighbor {remote_ip} remote-as {remote_as}
-neighbor {remote_ip} activate
-"""
-                    if my_as.connected_AS_dict[remote_as][0] != "client":
-                        config_address_family += f"neighbor {remote_ip} route-map General-OUT out\n"
+                self.config_bgp = f"""router bgp {self.AS_number}
+    bgp router-id {self.router_id}.{self.router_id}.{self.router_id}.{self.router_id}
+    """
+                config_address_family = ""
+                if my_as.ip_version == 6:
+                    config_neighbors_ibgp = "address-family ipv6 unicast\n"
                 else:
-                    remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
-                    remote_as = all_routers[voisin_ebgp].AS_number
-                    config_neighbors_ebgp += f"""no synchronization
-bgp log-neighbor-changes
-neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}
-network {self.network_address[voisin_ebgp][0]} mask {self.network_address[voisin_ebgp][1]}
-"""
-                self.config_bgp += config_neighbors_ibgp
-                self.config_bgp += config_neighbors_ebgp
-                self.config_bgp += config_address_family
+                    config_neighbors_ibgp = "bgp log-neighbor-changes\n"
+
+                for voisin_ibgp in self.voisins_ibgp:
+                    remote_ip = all_routers[voisin_ibgp].loopback_address
+                    config_neighbors_ibgp += f"""neighbor {remote_ip} remote-as {self.AS_number}    
+    neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}
+    neighbor {remote_ip} send-community both 
+    neighbor {remote_ip} next-hop-self
+    """
+                    config_address_family += f"""address-family vpnv4 
+    neighbor {remote_ip} activate 
+    """
+                config_neighbors_ebgp = ""
+                for voisin_ebgp in self.voisins_ebgp:
+                    if self.is_provider_edge(autonomous_systems, all_routers):
+                        remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
+                        remote_as = all_routers[voisin_ebgp].AS_number
+                        config_address_family += f"""address-family ipv4 vrf {self.dico_VRF_name[(voisin_ebgp,self.hostname)][0]}
+    neighbor {remote_ip} remote-as {remote_as}
+    neighbor {remote_ip} activate
+    redistribute connected
+    """
+                    else:
+                        remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
+                        remote_as = all_routers[voisin_ebgp].AS_number
+                        config_neighbors_ebgp += f"""no synchronization
+    bgp log-neighbor-changes
+    neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}
+    network {self.network_address[voisin_ebgp][0]} mask {self.network_address[voisin_ebgp][1]}
+    """
+                    self.config_bgp += config_neighbors_ibgp
+                    self.config_bgp += config_neighbors_ebgp
+                    self.config_bgp += config_address_family
+            else:
+
+                self.config_bgp = f"""router bgp {self.AS_number}
+    bgp router-id {self.router_id}.{self.router_id}.{self.router_id}.{self.router_id}
+    """
+                config_address_family = ""
+                if my_as.ip_version == 6:
+                    config_neighbors_ibgp = "address-family ipv6 unicast\n"
+                else:
+                    config_neighbors_ibgp = "bgp log-neighbor-changes\n"
+
+                for voisin_ibgp in self.voisins_ibgp:
+                    remote_ip = all_routers[voisin_ibgp].loopback_address
+                    config_neighbors_ibgp += f"""neighbor {remote_ip} remote-as {self.AS_number}    
+    neighbor {remote_ip} update-source {STANDARD_LOOPBACK_INTERFACE}
+    neighbor {remote_ip} send-community both 
+    neighbor {remote_ip} next-hop-self
+    """
+                    config_address_family += f"""address-family vpnv4 
+    neighbor {remote_ip} activate
+    neighbor {remote_ip} route-reflector-client 
+    """
+                config_neighbors_ebgp = ""
+                for voisin_ebgp in self.voisins_ebgp:
+                    if self.is_provider_edge(autonomous_systems, all_routers):
+                        remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
+                        remote_as = all_routers[voisin_ebgp].AS_number
+                        config_address_family += f"""address-family ipv4 vrf {self.dico_VRF_name[(voisin_ebgp,self.hostname)][0]}
+    neighbor {remote_ip} remote-as {remote_as}
+    neighbor {remote_ip} activate
+    redistribute connected
+    """
+                    else:
+                        remote_ip = all_routers[voisin_ebgp].ip_per_link[self.hostname]
+                        remote_as = all_routers[voisin_ebgp].AS_number
+                        config_neighbors_ebgp += f"""no synchronization
+    bgp log-neighbor-changes
+    neighbor {remote_ip} remote-as {all_routers[voisin_ebgp].AS_number}
+    network {self.network_address[voisin_ebgp][0]} mask {self.network_address[voisin_ebgp][1]}
+    """
+                    self.config_bgp += config_neighbors_ibgp
+                    self.config_bgp += config_neighbors_ebgp
+                    self.config_bgp += config_address_family
 
         elif mode == "cfg":
             config_address_family = ""
