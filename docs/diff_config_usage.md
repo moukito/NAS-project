@@ -17,7 +17,7 @@ Cet outil permet de comparer deux réseaux quasi identiques afin de générer le
 Pour capturer les configurations de tous les routeurs définis dans un fichier d'intention :
 
 ```bash
-python code/capture_config.py format/exemple.json --output configs
+python code/capture_config.py format/exemple_ipv4.json --output configs
 ```
 
 ### Comparaison de deux fichiers d'intention
