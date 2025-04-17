@@ -10,12 +10,13 @@ Repository du code pour le projet NAS en 3TC
           sous cette forme : `192.168.1.0/24`
         - "AS_number":le AS number, **doit être unique**
         - "routers" : la liste des hostname des routeurs appartenant à l'AS (**attention, ne pas mettre 1 routeur dans plusieurs AS !**)
-        - "internal_routing" : le nom du protocole de routage interne, seuls "RIP" et "OSPF" sont corrects
+        - "internal_routing" : le nom du protocole de routage interne "OSPF" est correct
         - "connected_AS" : une liste de "tuples" de 3 élements :
             - le numéro d'AS spécifié.
             - la relation avec celui-ci ("peer", "provider" ou "client") (**doit être logique des deux côtés, si peer d'un côté, peer de l'autre, si provider d'un côté, client de l'autre et inversement**).
             - un dictionnaire des préfixes ipv6 de liens à utiliser pour les points de connection avec cet AS partant d'un routeur donné (si on utilise le préfixe 2001:200:401::64 pour le lien entre l'AS 111 et 110 partant de R5 du côté 111, ce dictionnaire aura une entrée "R5":"2001:200:401::/64", **doivent être uniques par lien entre AS**).
-        - "loopback_prefix" : le préfixe IPv6 voulu pour allouer les adresses loopback, **doit être unique**
+        - "ipv4_loopback_prefix" : le préfixe IPv4 voulu pour allouer les adresses loopback, **doit être unique**
+        - "LDP_activation": true or false pour activer cette fonctionnalité dans l'AS,
 - "Les_routeurs" :
     - contient une liste de dictionnaires d'informations complets pour tous les routeurs :
         - "hostname" : le hostname du routeur, **doit être unique**
@@ -42,8 +43,8 @@ Repository du code pour le projet NAS en 3TC
     - Architecture : yes
     - Addressing : Automated and manual
     - Protocols : yes
-    - router reflector : no
-    - VPN sharing : yes
+    - router reflector : no (en cours...)
+    - VPN sharing : no (en cours...)
     - Policies
         - BGP Policies : yes
         - OSPF Metric Optimization : yes
