@@ -434,19 +434,8 @@ class Router:
         my_as = autonomous_systems[self.AS_number]
         
         for routers in my_as.routers : 
-            print("\n")
-            print("la")
-            print(all_routers[routers].is_provider_edge(autonomous_systems, all_routers))
-            print(routers)
-            print(self.hostname)
-            print("\n")
             if all_routers[routers].is_provider_edge(autonomous_systems, all_routers) and routers != self.hostname:
-                print("\n")
-                print("ici")
-                print(self.hostname)
-                print(routers)
-                print("\n")
-                self.voisins_ibgp.add(routers) 
+                self.voisins_ibgp.add(routers)
                 
         for link in self.links:
             if all_routers[link['hostname']].AS_number != self.AS_number:
@@ -582,10 +571,6 @@ exit
             for link in self.links:
                 neighbor_router = all_routers[link["hostname"]]
                 if self.AS_number != neighbor_router.AS_number:
-                    print("ici")
-                    print(self.hostname)
-                    print(link["hostname"])
-                    print(self.interface_per_link)
                     if VRF_PROCESSUS.get(f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}") is None:
 
                         VRF_PROCESSUS[(f"VRF_{self.interface_per_link[link["hostname"]]}_{self.hostname}", f"{neighbor_router.AS_number}:1", f"{neighbor_router.AS_number}:{LAST_ID_RD}")] = (link["hostname"], self.hostname)
