@@ -57,7 +57,7 @@ Repository du code pour le projet NAS en 3TC
     - Architecture : oui
     - Addressing : Automatique ou manuel si spécifié dans le fichier d'intention
     - Protocoles : oui
-    - router reflector : non (en cours...)
+    - router reflector : oui
     - VPN sharing : non (en cours...)
     - Policies
         - BGP Policies : oui
