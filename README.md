@@ -2,10 +2,12 @@
 Repository du code pour le projet NAS en 3TC
 
 ## Format du fichier d'intention
-- dictionnaire JSON avec 2 éléments top level :
+- dictionnaire JSON avec 3 éléments top level :
+- "ip_version" : la version de l'IP utilisée, **doit être 4**
 - "Les_AS" :
     - contient une liste de dictionnaires d'informations pour chaque AS :
-        - "ipv6_prefix" : le préfixe IPv6 du réseau, **doit être unique**
+        - "ipv4_prefix" : le préfixe IPv4 du réseau, **doit être unique** et 
+          sous cette forme : `192.168.1.0/24`
         - "AS_number":le AS number, **doit être unique**
         - "routers" : la liste des hostname des routeurs appartenant à l'AS (**attention, ne pas mettre 1 routeur dans plusieurs AS !**)
         - "internal_routing" : le nom du protocole de routage interne, seuls "RIP" et "OSPF" sont corrects
@@ -32,19 +34,17 @@ Repository du code pour le projet NAS en 3TC
 - testé et codé pour python 3.12.x
 - nécessite l'installation des modules précis de `requirements.txt` avec `pip install -r requirements.txt`
 - lancer GNS3 avec un projet vide ou un état intermédiaire du réseau décrit dans le fichier d'intention voulu
-- lancer `GenerateRouterConfig.py {cfg/telnet} {chemin relatif ou absolu vers le fichier d'intention}` avec un interpréteur python 3.12.x
-
-Remarque : Comme seules les loopback sont advertised en BGP, pour ping entre routeurs, il faut faire `ping {cible} source lo1` (le `source lo1` met comme adresse source l'adresse de loopback du routeur qui ping, ce qui permet aux ICMP echo reply de revenir)
+- lancer `GenerateRouterConfig.py telnet {chemin relatif ou absolu vers le fichier d'intention}` avec un interpréteur python 3.12.x
 
 
 ## Fonctionnalités supportées (Telles que listées sur le document du sujet)
 - Network Automation
-    - Architecture : oui
-    - Addressing : Automated
-    - Protocols : oui
+    - Architecture : yes
+    - Addressing : Automated and manual
+    - Protocols : yes
+    - router reflector : no
+    - VPN sharing : yes
     - Policies
-        - BGP Policies : oui
-        - OSPF Metric Optimization : oui
-- Deployment
-    - Drag and Drop bot : oui
-    - Telnet : oui
+        - BGP Policies : yes
+        - OSPF Metric Optimization : yes
+- Deployment with telnet
