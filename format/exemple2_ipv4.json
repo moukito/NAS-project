@@ -132,6 +132,7 @@
                 }
             ],
             "AS_number": 110,
+            "VPN_family": ["1"],
             "position": {
                 "x": -300,
                 "y": -100
@@ -146,6 +147,7 @@
                 }
             ],
             "AS_number": 110,
+            "VPN_family": ["1"],
             "position": {
                 "x": 500,
                 "y": -100
@@ -160,6 +162,7 @@
                 }
             ],
             "AS_number": 112,
+            "VPN_family": ["1"],
             "position": {
                 "x": -300,
                 "y": 100
@@ -174,6 +177,7 @@
                 }
             ],
             "AS_number": 112,
+            "VPN_family": ["1"],
             "position": {
                 "x": 500,
                 "y": 100
